@@ -15,7 +15,21 @@ jobs:
   release:
     runs-on: windows-latest
     needs: build
+    permissions:
+      contents: write
+      actions: write
     steps:
+      - name: Checkout release metadata
+        uses: actions/checkout@main
+
+      - name: Verify release notes
+        shell: pwsh
+        run: |
+          $releaseNotesPath = "release-notes/${{ github.ref_name }}.md"
+          if (-not (Test-Path -LiteralPath $releaseNotesPath -PathType Leaf)) {
+            throw "Missing required user-facing release notes: $releaseNotesPath"
+          }
+
       - name: Download Artifact
         uses: actions/download-artifact@main
         with:
@@ -30,6 +44,7 @@ jobs:
           files: |
             release/*
           target_commitish: ${{ github.sha }}
+          body_path: release-notes/${{ github.ref_name }}.md
           token: ${{ secrets.GITHUB_TOKEN }}
           fail_on_unmatched_files: true
 
