@@ -1,0 +1,5 @@
+{"file":".trellis/spec/backend/error-handling.md","reason":"Review every launch, desktop-dialog, and restart outcome for an explicit bounded exit."}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"Review pure parser boundaries, one-click authorization, and regression completeness."}
+{"file":".trellis/spec/backend/logging-guidelines.md","reason":"Review recovery logs for actionable state changes without OCR/frame leakage."}
+{"file":".trellis/tasks/08-08-daily-event-state-machine/prd.md","reason":"Review whether the daily recovery changes satisfy their established acceptance criteria."}
+{"file":".trellis/tasks/archive/2026-08/08-09-steam-cloud-launch-recovery/prd.md","reason":"Review whether the Steam recovery changes satisfy their established acceptance criteria."}

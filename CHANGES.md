@@ -1,5 +1,33 @@
 # 修改记录 — Ahab Assistant Limbus Company
 
+## 2026-08-10 — 发布与镜像同步改为显式操作
+
+### 背景与目标
+- 普通 `main` 推送会意外进入预发布与 MirrorChyan 同步链路；正式 GitHub Release 也会自动触发 MirrorChyan 工作流，导致不必要的发布尝试和失败记录。
+- 现将预发布和 MirrorChyan 同步改为明确的手动动作，保留普通 CI 的测试与构建。
+
+### 影响与兼容性
+- 普通 `main` 推送不会触发 CI、构建或任何发布；PR 和未勾选发布选项的手动 CI 运行只测试与构建，绝不会创建 GitHub Release、预发布标签或启动 MirrorChyan 工作流。
+- 需要预发布时，在 `CI Build` 的 **Run workflow** 中仅从 `main` 执行，并显式勾选“创建预发布 Release”。
+- MirrorChyan 安装包和说明同步只能分别从其工作流的 **Run workflow** 手动执行；两者均改为读取当前 `galact-byte/AhabAssistantLimbusCompany` 仓库的 Release。
+
+### 文件与实现
+| 操作 | 路径 | 说明 |
+|---|---|---|
+| 修改 | `.github/workflows/ci.yaml` | 预发布改为手动布尔开关，移除自动 MirrorChyan 调度并收紧权限。 |
+| 修改 | `.github/workflows/release.yaml` | 保留标签正式发布，移除自动 MirrorChyan 调度并收紧权限。 |
+| 修改 | `.github/workflows/mirrorchyan_release.yml` | 将安装包同步来源改为当前仓库，保持手动触发。 |
+| 修改 | `.github/workflows/mirrorchyan_release_note.yml` | 移除 Release 编辑事件触发，说明同步改为手动触发，并改为当前仓库来源。 |
+
+### 验证
+- 工作流 YAML 解析与触发条件断言：通过，确认 `main` 推送无法发布预发布或调度 MirrorChyan。
+- `uv run pytest -ra`：133 passed。
+- `git diff --check`：通过。
+
+### 已知限制与后续
+- MirrorChyan 的实际手动同步仍依赖有效的 `MirrorChyanUploadToken` 和 `AALC` 资源授权；首次手动同步时需在 Actions 日志确认其配置。
+
+
 ## 2026-08-09 — Steam 云同步无人值守启动恢复
 
 ### 背景与目标

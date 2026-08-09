@@ -6,8 +6,6 @@ on:
         tag:
             default: ''
             required: false
-  release:
-    types: [edited]
 
 jobs:
   mirrorchyan:
@@ -21,6 +19,6 @@ jobs:
           version_name: ${{ inputs.tag }}
 
           upload_token: ${{ secrets.MirrorChyanUploadToken }}
-          owner: KIYI671
+          owner: galact-byte
           repo: AhabAssistantLimbusCompany
           github_token: ${{ secrets.GITHUB_TOKEN }}
