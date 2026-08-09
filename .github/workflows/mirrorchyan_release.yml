@@ -23,6 +23,6 @@ jobs:
           mirrorchyan_rid: AALC
 
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          owner: KIYI671
+          owner: galact-byte
           repo: AhabAssistantLimbusCompany
           upload_token: ${{ secrets.MirrorChyanUploadToken }}
