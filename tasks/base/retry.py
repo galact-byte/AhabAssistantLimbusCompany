@@ -23,8 +23,8 @@ SERVER_ERROR_DISABLED_TIMEOUT = 15.0
 
 @dataclass(frozen=True)
 class ServerErrorDialog:
-    close_position: tuple[int, int]
-    close_bounds: tuple[int, int, int, int]
+    close_position: tuple[int, int] | None
+    close_bounds: tuple[int, int, int, int] | None
     retry_position: tuple[int, int]
     retry_bounds: tuple[int, int, int, int]
 
@@ -43,19 +43,23 @@ def find_server_error_dialog(
     later = _entry_with_text(entries, "请稍后再试")
     close = _entry_with_text(entries, "关闭")
     retry = _entry_with_text(entries, "重试")
-    if not all((error, later, close, retry)):
+    if not all((error, later, retry)):
         return None
 
     _, error_bounds = error
     _, later_bounds = later
-    _, close_bounds = close
     _, retry_bounds = retry
-    close_position = ((close_bounds[0] + close_bounds[2]) // 2, (close_bounds[1] + close_bounds[3]) // 2)
     retry_position = ((retry_bounds[0] + retry_bounds[2]) // 2, (retry_bounds[1] + retry_bounds[3]) // 2)
     message_bottom = max(error_bounds[3], later_bounds[3])
-    if retry_position[0] <= close_position[0] or min(close_position[1], retry_position[1]) <= message_bottom:
+    if retry_position[1] <= message_bottom:
         return None
+    if close is None:
+        return ServerErrorDialog(None, None, retry_position, retry_bounds)
 
+    _, close_bounds = close
+    close_position = ((close_bounds[0] + close_bounds[2]) // 2, (close_bounds[1] + close_bounds[3]) // 2)
+    if retry_position[0] <= close_position[0] or close_position[1] <= message_bottom:
+        return None
     return ServerErrorDialog(close_position, close_bounds, retry_position, retry_bounds)
 
 
@@ -106,6 +110,11 @@ def handle_server_error_dialog(now: float | None = None) -> bool | None:
             _last_server_error_retry_time = now
         else:
             log.debug("服务器错误弹窗的重试仍在 AALC 5 秒节流窗口内")
+        return True
+
+    if dialog.close_position is None:
+        _server_error_disabled_since = None
+        log.debug("服务器错误单按钮弹窗的重试暂不可用，等待游戏恢复可点击")
         return True
 
     if _server_error_disabled_since is None:
@@ -236,8 +245,6 @@ def retry():
             start_time = time.time()
         if auto.get_restore_time() is not None:
             start_time = max(start_time, auto.get_restore_time())
-        if check_times(start_time):
-            return False
         if auto.take_screenshot_with_color() is None:
             continue
         server_error_result = handle_server_error_dialog()
@@ -245,6 +252,8 @@ def retry():
             return False
         if server_error_result is True:
             continue
+        if check_times(start_time):
+            return False
         if auto.find_element("base/connecting_assets.png"):
             continue
         if position := auto.find_element("base/retry_countdown.png"):

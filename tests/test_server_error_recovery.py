@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -92,6 +93,55 @@ def test_handle_server_error_dialog_waits_for_game_countdown_and_delayed_gray_ti
     assert retry_module.handle_server_error_dialog(now=20.0 + retry_module.SERVER_ERROR_DISABLED_TIMEOUT) is False
     assert fake_auto.clicks == [(40, 90)]
     assert calls == ["kill", "restart"]
+
+
+def test_handle_server_error_dialog_clicks_enabled_single_retry_button_with_throttle(monkeypatch) -> None:
+    entries = [
+        ("服务器发生错误。", (60, 10, 180, 30)),
+        ("请稍后再试。", (70, 35, 170, 55)),
+        ("重试", (100, 80, 140, 100)),
+    ]
+    gold = np.zeros((120, 200, 3), dtype=np.uint8)
+    gold[80:100, 100:140] = (236, 203, 163)
+    fake_auto = FakeAuto(entries, gold)
+    monkeypatch.setattr(retry_module, "auto", fake_auto)
+    monkeypatch.setattr(retry_module, "_last_server_error_retry_time", 0.0)
+
+    assert retry_module.handle_server_error_dialog(now=10.0) is True
+    assert fake_auto.clicks == [(120, 90)]
+    assert retry_module.handle_server_error_dialog(now=14.9) is True
+    assert fake_auto.clicks == [(120, 90)]
+    assert retry_module.handle_server_error_dialog(now=15.0) is True
+    assert fake_auto.clicks == [(120, 90), (120, 90)]
+
+
+def test_retry_prioritizes_a_recognized_server_error_before_stall_restart(monkeypatch) -> None:
+    class FakeRetryAuto:
+        def __init__(self) -> None:
+            self.frames = 0
+
+        def take_screenshot_with_color(self) -> object:
+            self.frames += 1
+            if self.frames == 2:
+                raise StopIteration
+            return object()
+
+        def get_restore_time(self) -> None:
+            return None
+
+    monkeypatch.setattr(retry_module, "auto", FakeRetryAuto())
+    monkeypatch.setattr(retry_module, "cfg", SimpleNamespace(config=SimpleNamespace(simulator=False)))
+    monkeypatch.setattr(retry_module, "screen", SimpleNamespace(handle=SimpleNamespace(hwnd=1)))
+    monkeypatch.setattr(retry_module, "ensure_simulator_game_started", lambda: False)
+    monkeypatch.setattr(retry_module, "handle_server_error_dialog", lambda: True)
+    monkeypatch.setattr(
+        retry_module,
+        "check_times",
+        lambda *_args, **_kwargs: pytest.fail("已识别的服务器错误不应先触发卡死重启"),
+    )
+
+    with pytest.raises(StopIteration):
+        retry_module.retry()
 
 
 def test_handle_server_error_dialog_throttles_available_retry(monkeypatch) -> None:
