@@ -75,7 +75,7 @@ check_update: True
 update_prerelease_enable: False
 update_source: GitHub # 更新源
 mirrorchyan_cdk: "" # Mirror酱 CDK
-image_resource_sync: True # 是否启用图片资源自动同步
+image_resource_sync: False # 是否启用图片资源自动同步（fork 默认关：发布包已自带全部图，OTA 指向上游旧清单会误删本地新图）
 image_resource_source: Auto # 图片资源同步源，可选 Auto / Gitee / GitHub
 
 # 保存启动后的页面

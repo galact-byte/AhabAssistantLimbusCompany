@@ -237,7 +237,7 @@ class ResourceSyncCoordinator(QObject):
 
     def _start_resource_sync_on_startup(self) -> None:
         """在启动时按配置决定资源同步检查策略。"""
-        if cfg.get_value("image_resource_sync", True):
+        if cfg.get_value("image_resource_sync", False):
             # 自动同步开启时，启动阶段直接进入“检查并规划”模式。
             log.debug("已启用图片资源自动同步，启动时将先检查远端图片资源清单")
             started = self._start_resource_sync_worker(
