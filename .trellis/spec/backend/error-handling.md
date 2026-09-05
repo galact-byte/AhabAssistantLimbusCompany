@@ -196,6 +196,98 @@ if game_process.start_game():
         sleep(1)
 ```
 
+## Scenario: Mirror shop false-positive and farthest fallback
+
+### 1. Scope / Trigger
+
+- Trigger: the map gold HUD matches `mirror/shop/shop_coins_assets.png` at ≥0.96 while OCR still reads `正在探索第N层` and `legend_assets` scores about 0.777.
+- Scope: `tasks.mirror.shop_presence`, `Mirror` shop entry, `Shop.in_shop()` leave loop, `search_road_farthest_distance()`, `BackgroundInput.mouse_scroll`.
+- Goal: never enter shop from coins alone; if already on the map, leave without `back_init_menu()`; background farthest must run or degrade, never restart because scroll is missing.
+
+### 2. Signatures
+
+```python
+# tasks/mirror/shop_presence.py
+MAP_LEGEND_THRESHOLD = 0.75
+SHOP_CONTROL_THRESHOLD = 0.8
+
+@dataclass(frozen=True)
+class ShopPresence:
+    state: Literal["shop", "map", "unknown"]
+    reason: str
+
+def resolve_mirror_shop_presence(
+    ocr_texts: list[str],
+    *,
+    shop_coins: float | None = None,
+    legend: float | None = None,
+    leave: float | None = None,
+    heal: float | None = None,
+    shop_return: float | None = None,
+) -> ShopPresence: ...
+
+def inspect_mirror_shop_presence(auto) -> ShopPresence: ...
+def should_end_shop_leave(presence: ShopPresence) -> bool: ...
+```
+
+### 3. Contracts
+
+| Input / outcome | Contract |
+| --- | --- |
+| `map` | OCR matches `正在探索第.+层`, or `legend >= 0.75`. Coins at 0.96 cannot override this. |
+| `shop` | Coins meet the default image threshold **and** leave / heal / shop-return meets 0.8, **and** the frame is not `map`. |
+| `unknown` | Skip shop. Do not restart. Leave loop does not treat this as already left. |
+| Leave loop sees `map` | `break`; no `无法退出商店`; no `back_init_menu()`. |
+| `mouse_scroll()` is `False` | `search_road_farthest_distance()` returns `False`; do not raise `InputAttributeError`. |
+| `background_click` | Still call farthest. If it fails, keep the existing enter-door fallback. |
+
+Callers must feed raw similarity scores. `find_element(..., threshold=0.8)` drops a 0.777 legend and must not be the shop/map gate.
+
+### 4. Validation & Error Matrix
+
+| Condition | Required behavior |
+| --- | --- |
+| Logged map HUD (`shop_coins=0.96`, OCR `正在探索第1层`, legend 0.777) | `map`; do not call `in_shop()`. |
+| Coins + leave, no map evidence | `shop`; enter `in_shop()`. |
+| Coins only | `unknown`; skip shop. |
+| Leave loop on map evidence | End; resume pathfinding. |
+| Background scroll unavailable | farthest `False`; do not log `寻路出错, 尝试重进镜牢` yet. |
+
+### 5. Good / Base / Bad Cases
+
+- **Good:** map OCR vetoes coins and shop controls; pathfinding continues.
+- **Base:** true shop has coins plus leave/heal/return and no map OCR/legend.
+- **Bad:** coins alone, or coins plus a default-0.8 legend miss, must not enter shop or restart.
+
+### 6. Tests Required
+
+- Pure `resolve_mirror_shop_presence()` tests import `tasks.mirror.shop_presence` without instantiating `Automation`.
+- Logged HUD, legend-only, coins-only, coins+leave, and map-veto-over-controls cases.
+- Runtime inspect helper and all three `shop_coins` sites share it.
+- Leave loop ends on `map` without `back_init_menu`.
+- farthest returns `False` when scroll is `False`; `search_road()` does not skip farthest under `background_click`.
+- `BackgroundInput.mouse_scroll` emits `WM_MOUSEWHEEL` (mocked hwnd; no live window).
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```python
+if auto.find_element("mirror/shop/shop_coins_assets.png"):
+    self.in_shop()
+if not auto.mouse_scroll():
+    raise InputAttributeError("后台输入不支持滚轮操作!")
+```
+
+#### Correct
+
+```python
+if inspect_mirror_shop_presence(auto).state == "shop":
+    self.in_shop()
+if not auto.mouse_scroll():
+    return False
+```
+
 ## Common Mistakes
 
 - Do not add a per-event “土偶/罪人” template merely because one result page failed; extend the shared OCR parser with an evidence-backed semantic boundary.
@@ -203,3 +295,6 @@ if game_process.start_game():
 - Do not continue to team selection or `Battle.to_battle()` after an entry function returns `False`.
 - Do not use “the choice page remained visible” as evidence that the first choice is disabled; only the current RGB/HSV button state authorizes selecting the second choice.
 - Do not emit the normal completion toast or perform completion actions after a daily task returns `False`.
+- Do not treat `shop_coins_assets.png` as shop entry. Map gold HUD can score ≥0.96; require map veto plus a shop-only control.
+- Do not gate map-leave on `legend_assets` at the default 0.8; logged map legend is 0.777. Use `MAP_LEGEND_THRESHOLD` (0.75) or raw scores.
+- Do not skip `search_road_farthest_distance()` when `background_click` is on, and do not raise `InputAttributeError` when scroll returns `False`.
