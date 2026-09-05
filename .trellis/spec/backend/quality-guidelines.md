@@ -24,6 +24,8 @@ if resolution is not None and resolution.position is not None:
 
 `tasks.event_page` is the current shared boundary for daily event OCR recognition. `tasks.event.event_handling` may re-export its public interface for compatibility, but new pure tests should import the lightweight module directly.
 
+`tasks.mirror.shop_presence` is the shared boundary for mirror shop vs map. `resolve_mirror_shop_presence()` is pure; `inspect_mirror_shop_presence()` collects OCR texts and raw template scores (`get_image_match_score`, not `find_element` at 0.8) then calls the parser. Do not add this module to `tasks/mirror/__init__.py` — that file walks shop asset directories. All three `shop_coins` sites in `tasks/mirror/mirror.py` must call the same inspect helper.
+
 ### Bounded recovery
 
 Every page-recovery loop needs an explicit authority for its timeout. If a specialized wait is longer than a general retry loop, the specialized monotonic timeout must keep the general budget from expiring first. A recovery retry count must be a named constant and shared across equivalent flows.

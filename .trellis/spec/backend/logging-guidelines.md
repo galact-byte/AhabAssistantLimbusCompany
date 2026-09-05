@@ -33,6 +33,8 @@ A message must make it possible to distinguish the following outcomes:
 4. choice target selected because the first button was confirmed grey, or retrying the still-enabled first choice;
 5. recovery budget exhausted and current action stopped.
 
+For mirror shop/map recognition, log only the semantic `reason` (`map_ocr`, `map_legend`, `shop_controls`, `insufficient_evidence`) at `debug`. A leave loop that ends because the frame is already the map is `debug` (`已在地图，结束离开商店`). Farthest skipped because scroll is unavailable is `debug`, not `error`. Keep `无法退出商店` as `error` only after the leave budget is exhausted and the frame is still not `map`.
+
 ## Do not log
 
 - Screenshot pixels, screenshots, or the full OCR result list.
