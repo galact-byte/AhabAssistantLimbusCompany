@@ -31,6 +31,7 @@ from tasks.mirror.search_road import (
     search_road_simple_keyboard,
 )
 from tasks.mirror.select_theme_pack import select_theme_pack
+from tasks.mirror.shop_presence import inspect_mirror_shop_presence
 from tasks.teams.team_formation import check_team, load_team_code_in_game, select_battle_team, team_formation
 from utils.image_utils import ImageUtils
 
@@ -133,7 +134,7 @@ class Mirror:
             if auto.find_element("mirror/claim_reward/clear_assets.png"):
                 self.bequest_from_the_previous_game = True
                 return True
-            if auto.find_element("mirror/shop/shop_coins_assets.png"):  # 防止卡死在商店
+            if inspect_mirror_shop_presence(auto).state == "shop":  # 防止卡死在商店
                 break
             if auto.find_element("mirror/road_in_mir/legend_assets.png"):
                 break
@@ -284,7 +285,7 @@ class Mirror:
                     continue
                 if auto.find_element("teams/identify_assets.png"):
                     continue
-                if auto.find_element("mirror/shop/shop_coins_assets.png", model="normal"):
+                if inspect_mirror_shop_presence(auto).state == "shop":
                     continue
                 if auto.find_element("mirror/claim_reward/claim_rewards_assets.png") and auto.find_element(
                     "mirror/claim_reward/complete_mirror_100%_assets.png"
@@ -404,7 +405,7 @@ class Mirror:
                 continue
 
             # 商店事件
-            if auto.find_element("mirror/shop/shop_coins_assets.png"):
+            if inspect_mirror_shop_presence(auto).state == "shop":
                 _, elapsed = self._time_call(self.in_shop)
                 self.shop_total_time += elapsed
                 continue
@@ -1079,8 +1080,6 @@ class Mirror:
                 if retry() is False:
                     return False
             for _ in range(3):
-                if cfg.background_click:
-                    continue
                 while auto.take_screenshot() is None:
                     continue
                 if search_road_farthest_distance():

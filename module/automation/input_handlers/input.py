@@ -315,8 +315,7 @@ class Input(WinAbstractInput, metaclass=SingletonMeta):
 
 
 class BackgroundInput(WinAbstractInput, metaclass=SingletonMeta):
-    """基于 `pywin32` 的输入类, 支持后台操作
-    \n 除了不支持滚轮事件, 其余同 `Input` 类
+    """基于 `pywin32` 的输入类, 支持后台操作。
     """
 
     def mouse_to_blank(self, coordinate=(1, 1), move_back=True) -> None:
@@ -443,16 +442,34 @@ class BackgroundInput(WinAbstractInput, metaclass=SingletonMeta):
             self.mouse_move(current_mouse_position)
 
     def mouse_scroll(self, direction: int = -3) -> bool:
-        """
-        不支持的方法\n
-        进行鼠标滚动操作
+        """向游戏窗口发送 WM_MOUSEWHEEL，语义与前台 pyautogui.scroll 相同。
+
         Args:
             direction (int): 滚动方向，正值表示拉近，负值表示缩小
         Returns:
-            bool (False) : 表示是否支持该操作
+            bool: 消息已发出为 True；无窗口句柄则为 False
         """
-        # 不支持的方法
-        return False
+        if direction <= 0:
+            msg = "鼠标滚动滚轮，远离界面"
+        else:
+            msg = "鼠标滚动滚轮，拉近界面"
+        log.debug(msg, stacklevel=2)
+        hwnd = screen.handle.hwnd
+        if not hwnd:
+            log.debug("未初始化hwnd，无法发送滚轮")
+            return False
+        self.set_active()
+        rect = screen.handle.rect(True)
+        screen_x = (rect[0] + rect[2]) // 2
+        screen_y = (rect[1] + rect[3]) // 2
+        long_position = win32api.MAKELONG(int(screen_x), int(screen_y))
+        wparam = win32api.MAKELONG(0, int(direction) * 120)
+        if self.use_post_message:
+            win32api.PostMessage(hwnd, win32con.WM_MOUSEWHEEL, wparam, long_position)
+        else:
+            win32gui.SendMessage(hwnd, win32con.WM_MOUSEWHEEL, wparam, long_position)
+        self.wait_pause()
+        return True
 
     def mouse_click_blank(self, coordinate=(1, 1), times=1, move_back=True) -> bool:
         """在空白位置点击鼠标

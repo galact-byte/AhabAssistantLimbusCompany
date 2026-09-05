@@ -6,7 +6,6 @@ import cv2
 from module.automation import auto
 from module.config import cfg
 from module.logger import log
-from module.my_error.my_error import InputAttributeError
 from tasks.base.retry import retry
 
 
@@ -239,7 +238,8 @@ def search_road_farthest_distance():
     scale = cfg.set_win_size / 1440
     auto.mouse_click_blank()
     if not auto.mouse_scroll():
-        raise InputAttributeError("后台输入不支持滚轮操作!")
+        log.debug("滚轮缩放不可用，跳过最远距离寻路")
+        return False
     while auto.take_screenshot() is None:
         continue
     if retry() is False:
