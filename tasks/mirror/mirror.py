@@ -1120,9 +1120,11 @@ class Mirror:
             if auto.click_element("home/drive_assets.png") or auto.find_element("home/window_assets.png"):
                 sleep(0.5)
                 break
-            if auto.click_element("mirror/road_in_mir/towindow&forfeit_confirm_assets.png"):
+            if auto.click_element("mirror/road_in_mir/towindow&forfeit_confirm_assets.png", threshold=0.7):
                 break
-            if auto.click_element("mirror/road_in_mir/to_window_assets.png"):
+            # “回到窗口”在 1600x900 实测约 0.78，卡在默认 0.8 门限下方（同 legend 0.777 类型），
+            # 不降阈会反复开关暂停菜单直到卡死保护杀线程
+            if auto.click_element("mirror/road_in_mir/to_window_assets.png", threshold=0.7):
                 continue
             if auto.click_element("mirror/road_in_mir/setting_assets.png"):
                 sleep(1)

@@ -17,6 +17,18 @@
 - 新增回归测试覆盖：None 兜底返回空路径不抛异常、键盘兜底进节点成功/失败分支。
 - `uv run pytest`、`ruff check`、`compileall` 全绿。
 
+## 日志验证（debugLog.log，issue #893 附件原件）
+
+拉取了 issue #893 附的 debugLog.log（后台模式 `background_click: True`、`win_input_type: background`、`set_win_size: 900`、`mirror_keyboard_navigation: True`、`mirror_keyboard_simple_pathfinding: False`），看到关键事实：
+
+- 23:00—00:01 键盘寻路（`search_road.py:56 通过键盘按键寻路: M/D/U`）一直正常，跑完一个完整镜牢（层、战斗、商店、奖励卡、主题包均 OK）。
+- 00:02:09 `mirror.py:1108 寻路出错, 尝试重进镜牢` 后进入重进恢复循环，之后持续振荡：`to_window_assets`（回到窗口）**0.78 / 0.21 交替**，`setting_assets`（齿轮）**恒 0.89 被点**。因 0.78 < 默认 0.8 门限，“回到窗口”永远点不上，齿轮反复开关暂停菜单。
+- 00:03:19 `retry.py:127 已卡死70秒` → 00:03:24 重置窗口、终止脚本线程，`已完成普通镜牢进度 1 / 9999`。
+
+**真正根因**：重进恢复分支里 `to_window_assets` 在 1600x900 实测 0.78，卡在默认 0.8 门限下方——与 legend 0.777（记忆 #402）同一类“近下阈”问题。已把 `to_window` 与 `towindow&forfeit_confirm` 的点击门限降到 0.7。
+
+**分辨率/拖动附带结论**：真实地图帧上 legend 得分 **0.94**（清晰），说明 640x480 显示并未拖垮识别；启动时“渲染比例低”警告未触发（renderingScale≠低）。“无法拖动”是后台模式 + 工具为防误触把窗口改成无边框固定（`reduce_miscontact` 移除 WS_THICKFRAME/WS_CAPTION）所致的手动体验，不是坐标/识别 bug，属游戏端显示设置。
+
 ## 非目标
 
 - 不改 ONNX 模型本身，也不改 1600x900 无法拖动/640x480 的分辨率问题（属另一独立现象，本次不处理）。

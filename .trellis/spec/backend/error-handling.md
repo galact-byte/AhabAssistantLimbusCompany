@@ -307,6 +307,7 @@ if not auto.mouse_scroll():
 | Recovery loop and `is_on_mirror_map(auto, use_ocr=False)` is true | Call `keyboard_node_fallback()` (arrow keys + `enter_assets` check); return `True` on entry, else `continue`. Do not fall through to the setting-gear click while on the map. |
 | Not on the map (pause menu / window) | Keep the existing exit/re-enter logic (`to_window`, `setting`, forfeit). |
 | `keyboard_node_fallback()` | Only press arrow keys; gated by the on-map check so mouse mode and non-map states are unaffected. |
+| Re-enter buttons `to_window_assets` / `towindow&forfeit_confirm_assets` | Click at `threshold=0.7`, not the default 0.8. At 1600x900 `to_window` scores ~0.78 (verified in issue #893 debugLog); the default 0.8 gate makes the gear toggle the pause menu forever until the 90s stuck-guard. |
 
 ### 3. Tests Required
 
