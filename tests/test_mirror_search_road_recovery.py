@@ -91,3 +91,14 @@ def test_recovery_loop_prefers_keyboard_over_setting_gear() -> None:
     assert "is_on_mirror_map(auto, use_ocr=False)" in body
     # 键盘兜底必须出现在设置齿轮点击之前
     assert body.index("keyboard_node_fallback") < body.index("mirror/road_in_mir/setting_assets.png")
+
+
+def test_recovery_to_window_uses_sub_default_threshold() -> None:
+    """issue #893 日得：回到窗口在 1600x900 实测 0.78，必须低于默认 0.8 才能点出。"""
+    source = Path("tasks/mirror/mirror.py").read_text(encoding="utf-8")
+    start = source.index("def search_road(self):")
+    end = source.index("\n    def ", start + 1)
+    body = source[start:end]
+
+    line = next(ln for ln in body.splitlines() if "to_window_assets.png" in ln and "click_element" in ln)
+    assert "threshold=0.7" in line
