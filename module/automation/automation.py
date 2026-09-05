@@ -777,6 +777,30 @@ class Automation(metaclass=SingletonMeta):
             log.error(f"寻找图片失败:{e}")
         return None
 
+    def get_image_match_score(self, target: str, model=None) -> float | None:
+        """返回当前截图上模板的最高相似度，不按默认 0.8 阈值过滤。"""
+        if self.screenshot is None:
+            return None
+        if model is None:
+            model = self.model
+        try:
+            existing_paths = ImageUtils.existing_image_paths(target)
+            if not existing_paths:
+                return None
+            screenshot = np.array(self.screenshot)
+            best_score = None
+            for loaded_path in existing_paths:
+                template, bbox = self._load_template_for_path(target, loaded_path, cacheable=True)
+                if template is None:
+                    continue
+                _center, match_val = ImageUtils.match_template(screenshot, template, bbox, model)
+                if best_score is None or match_val > best_score:
+                    best_score = match_val
+            return best_score
+        except Exception as e:
+            log.error(f"获取图片相似度失败:{e}")
+            return None
+
     def get_screenshot_crop(self, crop):
         """
         获取指定区域的彩色截图

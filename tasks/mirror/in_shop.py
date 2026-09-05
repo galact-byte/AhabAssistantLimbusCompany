@@ -10,6 +10,7 @@ from tasks import all_sinners_name, all_sinners_name_zh, all_systems, system_cn_
 from tasks.base.back_init_menu import back_init_menu
 from tasks.base.retry import retry
 from tasks.mirror import fusion_result, must_be_abandoned, must_purchase
+from tasks.mirror.shop_presence import inspect_mirror_shop_presence, should_end_shop_leave
 from utils.image_utils import ImageUtils
 
 
@@ -1420,7 +1421,9 @@ class Shop:
 
                 if retry() is False:
                     raise self.RestartGame()
-                if auto.find_element("mirror/road_in_mir/legend_assets.png"):
+                presence = inspect_mirror_shop_presence(auto)
+                if should_end_shop_leave(presence):
+                    log.debug(f"已在地图，结束离开商店: {presence.reason}")
                     break
                 if auto.click_element("mirror/shop/leave_shop_confirm_assets.png"):
                     continue
