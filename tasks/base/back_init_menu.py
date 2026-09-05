@@ -7,6 +7,7 @@ from tasks.base import update_model_for_retry
 from tasks.base.retry import click_title_screen_safely, ensure_simulator_game_started, retry
 from tasks.event.event_handling import resolve_event_page
 from tasks.mirror.reward_card import get_reward_card
+from tasks.mirror.shop_presence import is_on_mirror_map
 
 LOOP_COUNT = 30
 LOADING_TIMEOUT = 90
@@ -100,7 +101,7 @@ def back_init_menu(*, allow_restart: bool = True):
             continue
         if auto.click_element("mirror/road_in_mir/to_window_assets.png", threshold=0.75):
             continue
-        if auto.find_element("mirror/road_in_mir/legend_assets.png"):
+        if is_on_mirror_map(auto, use_ocr=False):
             auto.click_element("mirror/road_in_mir/setting_assets.png")
             continue
 

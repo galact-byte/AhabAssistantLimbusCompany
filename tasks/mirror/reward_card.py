@@ -4,6 +4,7 @@ from module.automation import auto
 from module.decorator.decorator import begin_and_finish_time_log
 from module.logger import log
 from tasks.base.retry import retry
+from tasks.mirror.shop_presence import is_on_mirror_map
 
 reward_card_model = {
     0: [
@@ -52,7 +53,7 @@ def get_reward_card(model=0):
         if auto.take_screenshot() is None:
             continue
         auto.mouse_to_blank()
-        if auto.find_element("mirror/road_in_mir/legend_assets.png"):
+        if is_on_mirror_map(auto):
             return True
         if auto.click_element("mirror/road_in_mir/ego_gift_get_confirm_assets.png", model="clam"):
             log.debug("奖励卡领取后识别到EGO确认，领取流程结束")

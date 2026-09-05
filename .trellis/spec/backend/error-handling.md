@@ -228,6 +228,7 @@ def resolve_mirror_shop_presence(
 
 def inspect_mirror_shop_presence(auto) -> ShopPresence: ...
 def should_end_shop_leave(presence: ShopPresence) -> bool: ...
+def is_on_mirror_map(auto, *, use_ocr: bool = True) -> bool: ...
 ```
 
 ### 3. Contracts
@@ -240,8 +241,9 @@ def should_end_shop_leave(presence: ShopPresence) -> bool: ...
 | Leave loop sees `map` | `break`; no `无法退出商店`; no `back_init_menu()`. |
 | `mouse_scroll()` is `False` | `search_road_farthest_distance()` returns `False`; do not raise `InputAttributeError`. |
 | `background_click` | Still call farthest. If it fails, keep the existing enter-door fallback. |
+| Map gate (`is_on_mirror_map`) | `legend >= 0.75`, then optional OCR. Battle / `back_init_menu` pass `use_ocr=False`. |
 
-Callers must feed raw similarity scores. `find_element(..., threshold=0.8)` drops a 0.777 legend and must not be the shop/map gate.
+Callers must feed raw similarity scores. `find_element(..., threshold=0.8)` drops a 0.777 legend and must not be the shop/map gate. Pathfinding, reward-card, theme-pack, battle, and return-home map gates must use `is_on_mirror_map`, not default `find_element`.
 
 ### 4. Validation & Error Matrix
 
@@ -265,6 +267,7 @@ Callers must feed raw similarity scores. `find_element(..., threshold=0.8)` drop
 - Logged HUD, legend-only, coins-only, coins+leave, and map-veto-over-controls cases.
 - Runtime inspect helper and all three `shop_coins` sites share it.
 - Leave loop ends on `map` without `back_init_menu`.
+- `is_on_mirror_map()` accepts logged legend 0.777; battle and `back_init_menu` call it with `use_ocr=False`.
 - farthest returns `False` when scroll is `False`; `search_road()` does not skip farthest under `background_click`.
 - `BackgroundInput.mouse_scroll` emits `WM_MOUSEWHEEL` (mocked hwnd; no live window).
 

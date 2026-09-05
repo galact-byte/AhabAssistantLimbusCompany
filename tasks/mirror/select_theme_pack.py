@@ -5,6 +5,7 @@ from module.config import cfg, theme_list
 from module.decorator.decorator import begin_and_finish_time_log
 from module.logger import log
 from tasks.base.back_init_menu import back_init_menu
+from tasks.mirror.shop_presence import is_on_mirror_map
 from utils.image_utils import ImageUtils
 from utils.path_manager import path_manager
 
@@ -36,7 +37,9 @@ def select_theme_pack(hard_switch=False, floor=None, team_num=None, use_custom_t
     unknown_weight = int(theme_pack_list_zh.get("未知", theme_pack_list_en.get("unknown", -5)))
     refresh_times = 3
     difficulty = None
-    if auto.find_element("mirror/road_in_mir/legend_assets.png", take_screenshot=True):
+    while auto.take_screenshot() is None:
+        continue
+    if is_on_mirror_map(auto):
         return
     while True:
         # 自动截图
@@ -61,7 +64,9 @@ def select_theme_pack(hard_switch=False, floor=None, team_num=None, use_custom_t
                 ]
                 ocr_result = auto.find_text_element(None, my_crop=difficulty_bbox, only_text=True)
                 if not isinstance(ocr_result, str):
-                    if auto.find_element("mirror/road_in_mir/legend_assets.png", take_screenshot=True):
+                    if auto.take_screenshot() is None:
+                        continue
+                    if is_on_mirror_map(auto):
                         return
                     continue
                 if "normal" in ocr_result:
