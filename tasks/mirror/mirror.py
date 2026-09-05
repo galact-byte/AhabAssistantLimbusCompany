@@ -26,6 +26,7 @@ from tasks.mirror.in_shop import Shop
 from tasks.mirror.reward_card import get_reward_card
 from tasks.mirror.search_road import (
     MirrorMap,
+    keyboard_node_fallback,
     search_road_default_distance,
     search_road_farthest_distance,
     search_road_simple_keyboard,
@@ -1111,6 +1112,11 @@ class Mirror:
             auto.mouse_to_blank()
             if auto.click_element("mirror/road_in_mir/enter_assets.png"):
                 return True
+            # 仍停在镜牢地图上：寻路失败不是“卡在节点/战斗里”，走键盘重选节点，避免死点设置齿轮
+            if is_on_mirror_map(auto, use_ocr=False):
+                if keyboard_node_fallback():
+                    return True
+                continue
             if auto.click_element("home/drive_assets.png") or auto.find_element("home/window_assets.png"):
                 sleep(0.5)
                 break

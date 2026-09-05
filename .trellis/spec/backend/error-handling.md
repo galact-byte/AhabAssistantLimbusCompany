@@ -291,6 +291,29 @@ if not auto.mouse_scroll():
     return False
 ```
 
+## Scenario: Mirror pathfinding ONNX-None and on-map recovery
+
+### 1. Scope / Trigger
+
+- Trigger: `identify_nodes()` (ONNX) returns `None` on the mirror map, or `mybus_default_distance.png` is never located, so `search_road_from_road_map()` used to feed `None` / a `None` bus into `divide_the_area_by_*` / `bus[0]` and raise `TypeError` (issue #893).
+- Trigger: `search_road()` recovery `while True` runs while still on the mirror map, where only `setting_assets.png` (~0.89) matches, so the gear is clicked forever until the ~90s stuck-guard kills the thread.
+- Scope: `tasks.mirror.search_road.search_road_from_road_map`, `keyboard_node_fallback`, `Mirror.search_road` recovery loop.
+
+### 2. Contracts
+
+| Input / outcome | Contract |
+| --- | --- |
+| `identify_nodes()` returns `None`, or `bus` / `bus_pos` is `None` | `search_road_from_road_map()` returns `([], [])`; never raise. Empty path degrades to default/farthest fallback. |
+| Recovery loop and `is_on_mirror_map(auto, use_ocr=False)` is true | Call `keyboard_node_fallback()` (arrow keys + `enter_assets` check); return `True` on entry, else `continue`. Do not fall through to the setting-gear click while on the map. |
+| Not on the map (pause menu / window) | Keep the existing exit/re-enter logic (`to_window`, `setting`, forfeit). |
+| `keyboard_node_fallback()` | Only press arrow keys; gated by the on-map check so mouse mode and non-map states are unaffected. |
+
+### 3. Tests Required
+
+- `search_road_from_road_map()` returns `([], [])` when bus is missing and when `identify_nodes` is `None`, with no exception.
+- `keyboard_node_fallback()` returns `True` when a node is entered and `False` when stuck.
+- Structural: `Mirror.search_road` recovery calls `keyboard_node_fallback` under `is_on_mirror_map(auto, use_ocr=False)` before the `setting_assets.png` click.
+
 ## Common Mistakes
 
 - Do not add a per-event “土偶/罪人” template merely because one result page failed; extend the shared OCR parser with an evidence-backed semantic boundary.
@@ -301,3 +324,5 @@ if not auto.mouse_scroll():
 - Do not treat `shop_coins_assets.png` as shop entry. Map gold HUD can score ≥0.96; require map veto plus a shop-only control.
 - Do not gate map-leave on `legend_assets` at the default 0.8; logged map legend is 0.777. Use `MAP_LEGEND_THRESHOLD` (0.75) or raw scores.
 - Do not skip `search_road_farthest_distance()` when `background_click` is on, and do not raise `InputAttributeError` when scroll returns `False`.
+- Do not feed a `None` from `identify_nodes()` (or a `None` bus) into `search_road_from_road_map` node math; return `([], [])` and let default/farthest fallback run.
+- Do not click `setting_assets.png` in a loop while `is_on_mirror_map(use_ocr=False)`; use `keyboard_node_fallback()` so recovery does not depend on the 90s stuck-guard.

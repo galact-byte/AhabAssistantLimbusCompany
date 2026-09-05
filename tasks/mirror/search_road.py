@@ -153,6 +153,21 @@ def search_road_simple_keyboard():
     return False
 
 
+def keyboard_node_fallback():
+    """地图寻路失败时的键盘兜底：按方向键选节点并尝试进入，避免死点设置齿轮。
+
+    仅应在确认仍停在镜牢地图上时调用。进入成功返回 True，否则 False 交回上层继续兜底。
+    """
+    for key in ("up", "down", "up"):
+        auto.key_press(key)
+        sleep(1)
+        while auto.take_screenshot() is None:
+            continue
+        if auto.click_element("mirror/road_in_mir/enter_assets.png", take_screenshot=True):
+            return True
+    return False
+
+
 # 在默认缩放情况下，进行镜牢寻路
 def search_road_default_distance():
     start_time = time.time()
@@ -305,7 +320,13 @@ def search_road_from_road_map(hard_mode=False):
                 break
 
     bus_pos = auto.find_element("mirror/mybus_default_distance.png")
+    if bus is None or bus_pos is None:
+        log.warning("寻路未定位到公交车，放弃路线图规划，回退兜底寻路")
+        return [], []
     all_nodes = identify_nodes(bus[0])
+    if not all_nodes:
+        log.warning("ONNX 未识别到镜牢节点，放弃路线图规划，回退兜底寻路")
+        return [], []
     y_area = divide_the_area_by_y(all_nodes)
     reset_position = False
     initial_bus_pos = Position.MID
@@ -357,6 +378,9 @@ def search_road_from_road_map(hard_mode=False):
                 if bus_position is None:
                     break
         all_nodes = identify_nodes(bus[0])
+        if not all_nodes:
+            log.warning("ONNX 复位后仍未识别到镜牢节点，放弃路线图规划，回退兜底寻路")
+            return [], []
 
     if len(road) != 0:
         return road, ["unknown"]
