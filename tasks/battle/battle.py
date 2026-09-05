@@ -22,6 +22,7 @@ from tasks.event_page import (
     is_event_choice_page,
     is_first_event_choice_disabled,
 )
+from tasks.mirror.shop_presence import is_on_mirror_map
 from utils.image_utils import ImageUtils
 from utils.utils import find_skill3
 
@@ -280,7 +281,7 @@ class Battle:
 
             total_count += 1
 
-            if auto.find_element("mirror/road_in_mir/legend_assets.png"):
+            if is_on_mirror_map(auto, use_ocr=False):
                 if infinite_battle:
                     continue
                 return False
@@ -348,7 +349,7 @@ class Battle:
                             auto.mouse_to_blank()
                             if auto.take_screenshot() is None:
                                 continue
-                            if auto.find_element("mirror/road_in_mir/legend_assets.png"):
+                            if is_on_mirror_map(auto, use_ocr=False):
                                 return False
                             if auto.click_element("battle/give_up_assets.png"):
                                 sleep(2)
@@ -566,7 +567,7 @@ class Battle:
                     continue
                 break
 
-            if auto.find_element("mirror/road_in_mir/legend_assets.png"):
+            if is_on_mirror_map(auto, use_ocr=False):
                 if infinite_battle:
                     continue
                 break

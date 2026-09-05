@@ -31,7 +31,7 @@ from tasks.mirror.search_road import (
     search_road_simple_keyboard,
 )
 from tasks.mirror.select_theme_pack import select_theme_pack
-from tasks.mirror.shop_presence import inspect_mirror_shop_presence
+from tasks.mirror.shop_presence import inspect_mirror_shop_presence, is_on_mirror_map
 from tasks.teams.team_formation import check_team, load_team_code_in_game, select_battle_team, team_formation
 from utils.image_utils import ImageUtils
 
@@ -136,7 +136,7 @@ class Mirror:
                 return True
             if inspect_mirror_shop_presence(auto).state == "shop":  # 防止卡死在商店
                 break
-            if auto.find_element("mirror/road_in_mir/legend_assets.png"):
+            if is_on_mirror_map(auto):
                 break
             if auto.click_element("mirror/road_to_mir/resume_assets.png"):
                 break
@@ -277,7 +277,7 @@ class Mirror:
                 continue
 
             # 在镜牢中寻路
-            if auto.find_element("mirror/road_in_mir/legend_assets.png"):
+            if is_on_mirror_map(auto):
                 auto.mouse_to_blank()
                 while auto.take_screenshot() is None:
                     continue
@@ -300,7 +300,7 @@ class Mirror:
 
                 while auto.take_screenshot() is None:
                     continue
-                if auto.find_element("mirror/road_in_mir/legend_assets.png"):
+                if is_on_mirror_map(auto):
                     _, elapsed = self._time_call(self.search_road)
                     self.find_road_total_time += elapsed
                 continue
@@ -1164,7 +1164,7 @@ class Mirror:
             # 如果在战斗中或回到镜牢路线图中，则跳出循环
             if auto.find_element("battle/turn_assets.png"):
                 break
-            if auto.find_element("mirror/road_in_mir/legend_assets.png"):
+            if is_on_mirror_map(auto):
                 break
 
             if event_chance == 0:

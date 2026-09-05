@@ -124,6 +124,57 @@ def test_leave_loop_uses_shared_map_presence() -> None:
     assert "should_end_shop_leave" in source
 
 
+def test_is_on_mirror_map_logged_hud() -> None:
+    from tasks.mirror.shop_presence import is_on_mirror_map
+
+    auto = FakeShopAuto(
+        ["正在探索第1层"],
+        {SHOP_COINS: 0.96, LEGEND: 0.777, LEAVE: 0.2, HEAL: 0.3, SHOP_RETURN: 0.1},
+    )
+    assert is_on_mirror_map(auto) is True
+    assert is_on_mirror_map(auto, use_ocr=False) is True
+
+
+def test_is_on_mirror_map_rejects_true_shop() -> None:
+    from tasks.mirror.shop_presence import is_on_mirror_map
+
+    auto = FakeShopAuto(
+        [],
+        {SHOP_COINS: 0.96, LEGEND: 0.2, LEAVE: 0.85, HEAL: 0.3, SHOP_RETURN: 0.1},
+    )
+    assert is_on_mirror_map(auto) is False
+
+
+def test_is_on_mirror_map_ocr_fallback_without_legend() -> None:
+    from tasks.mirror.shop_presence import is_on_mirror_map
+
+    auto = FakeShopAuto(["正在探索第1层"], {LEGEND: 0.2})
+    assert is_on_mirror_map(auto) is True
+    assert is_on_mirror_map(auto, use_ocr=False) is False
+
+
+def test_is_on_mirror_map_missing_score_api_is_not_map() -> None:
+    from tasks.mirror.shop_presence import is_on_mirror_map
+
+    class IncompleteAuto:
+        pass
+
+    assert is_on_mirror_map(IncompleteAuto(), use_ocr=False) is False
+
+
+def test_pathfinding_gates_do_not_use_default_legend_threshold() -> None:
+    for path in (
+        "tasks/mirror/mirror.py",
+        "tasks/mirror/reward_card.py",
+        "tasks/mirror/select_theme_pack.py",
+        "tasks/battle/battle.py",
+        "tasks/base/back_init_menu.py",
+    ):
+        source = Path(path).read_text(encoding="utf-8")
+        assert "is_on_mirror_map" in source
+        assert 'find_element("mirror/road_in_mir/legend_assets.png"' not in source
+
+
 def test_search_road_does_not_skip_farthest_on_background_click() -> None:
     source = Path("tasks/mirror/mirror.py").read_text(encoding="utf-8")
     start = source.index("def search_road(self):")
