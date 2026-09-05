@@ -21,6 +21,16 @@ from utils.utils import decrypt_string
 
 md_renderer = MarkdownIt("gfm-like", {"html": True})
 
+GITHUB_UPDATE_OWNER = "galact-byte"
+GITHUB_UPDATE_REPO = "AhabAssistantLimbusCompany"
+
+
+def resolve_update_check_source(update_source: str | None) -> str:
+    """Map the user-facing update source to a check backend."""
+    if update_source == "MirrorChyan":
+        return "mirrorchyan"
+    return "github"
+
 
 class UpdateStatus(Enum):
     """
@@ -59,8 +69,8 @@ class UpdateThread(QThread):
         self.flag = flag  # 标志位，用于控制是否执行检查更新
         self.error_msg = ""  # 错误信息
 
-        self.user = "KIYI671"
-        self.repo = "AhabAssistantLimbusCompany"
+        self.user = GITHUB_UPDATE_OWNER
+        self.repo = GITHUB_UPDATE_REPO
         self.new_version = ""
         # 记录本次检查后“当前版本是否已追平最新版本”，供资源同步门禁读取。
         self.is_current_version_latest = False
@@ -134,39 +144,27 @@ class UpdateThread(QThread):
             if self.flag and not cfg.get_value("check_update"):
                 return
 
-            # 第一步：优先从 Mirror酱 获取最新版本信息，并同步记录版本门禁需要的数据。
-            data = self.check_update_info_mirrorchyan()
-            version = data["version_name"]
-            # 同步记录本次检查得到的最新版本号与比较结果，供资源同步门禁直接复用。
-            current_version, latest_version = self._set_version_gate_state(version)
-            # 第二步：整理更新日志正文，去掉图片，生成可展示文本。
-            content = self._build_release_note_content(data["release_note"])
+            source = resolve_update_check_source(cfg.update_source)
+            if source == "mirrorchyan":
+                data = self.check_update_info_mirrorchyan()
+                version = data["version_name"]
+                current_version, latest_version = self._set_version_gate_state(version)
+                content = self._build_release_note_content(data["release_note"])
+                self._emit_version_check_result(version, current_version, latest_version, content)
+                return
 
-            # 第三步：比较当前版本与最新版本，并统一发出检查结果信号。
+            data = self.check_update_info_github()
+            version = data["tag_name"]
+            current_version, latest_version = self._set_version_gate_state(version)
+            content = self._build_release_note_content(data["body"])
+            assets_url = self.get_download_url_from_assets(data["assets"])
+            if assets_url is None:
+                self.updateSignal.emit(UpdateStatus.SUCCESS)
+                return
             self._emit_version_check_result(version, current_version, latest_version, content)
         except Exception as e:
-            # Mirror酱 失败后自动回退到 GitHub，保持原有软件更新逻辑不变。
-            log.error(f"从Mirror酱源检查更新失败:{e},尝试使用GitHub源检查更新")
-            try:
-                data = self.check_update_info_github()
-                version = data["tag_name"]
-                # 当回退到 GitHub 源时，同样刷新版本比较结果，避免后续门禁读取到旧值。
-                current_version, latest_version = self._set_version_gate_state(version)
-                # 回退到 GitHub 后同样整理更新日志正文。
-                content = self._build_release_note_content(data["body"])
-                assets_url = self.get_download_url_from_assets(data["assets"])
-
-                # 若当前回退源未携带可下载资产，则按“当前无需更新”处理。
-                if assets_url is None:
-                    self.updateSignal.emit(UpdateStatus.SUCCESS)
-                    return
-
-                # 最后继续复用同一套版本比较逻辑，决定是否弹出更新提示。
-                self._emit_version_check_result(version, current_version, latest_version, content)
-            except Exception as e:
-                # 异常处理，发送失败信号
-                log.error(f"Mirror酱源与GitHub源均检查更新失败:{e}")
-                self.updateSignal.emit(UpdateStatus.FAILURE)
+            log.error(f"检查更新失败:{e}")
+            self.updateSignal.emit(UpdateStatus.FAILURE)
 
     def check_update_info_github(self):
         """

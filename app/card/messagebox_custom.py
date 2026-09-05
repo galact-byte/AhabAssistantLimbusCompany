@@ -54,7 +54,7 @@ class MessageBoxHtml(MessageBox):
         self.jumpButton.setFocus()
         # self.jumpButton = QPushButton('跳转', parent)
         self.jumpButton.clicked.connect(
-            lambda: self.open_url("https://github.com/KIYI671/AhabAssistantLimbusCompany/releases")
+            lambda: self.open_url("https://github.com/galact-byte/AhabAssistantLimbusCompany/releases")
         )
 
         # 调整按钮组的大小策略（关键！）

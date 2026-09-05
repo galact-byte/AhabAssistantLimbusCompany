@@ -397,7 +397,7 @@ class SettingInterface(QWidget):
             QT_TRANSLATE_NOOP("BasePrimaryPushSettingCard", "项目主页"),
             FIF.GITHUB,
             QT_TRANSLATE_NOOP("BasePrimaryPushSettingCard", "项目主页"),
-            "https://github.com/KIYI671/AhabAssistantLimbusCompany",
+            "https://github.com/galact-byte/AhabAssistantLimbusCompany",
         )
         self.discord_group_card = BasePrimaryPushSettingCard(
             QT_TRANSLATE_NOOP("BasePrimaryPushSettingCard", "加入群聊"),
@@ -593,10 +593,10 @@ class SettingInterface(QWidget):
         self.theme_card.valueChanged.connect(self.__onThemeCardChanged)
 
         # 最后连接外链卡片，统一复用打开 URL 的回调工厂。
-        self.github_card.clicked.connect(self.__openUrl("https://github.com/KIYI671/AhabAssistantLimbusCompany"))
+        self.github_card.clicked.connect(self.__openUrl("https://github.com/galact-byte/AhabAssistantLimbusCompany"))
         self.discord_group_card.clicked.connect(self.__openUrl("https://discord.gg/vUAw98cEVe"))
         self.feedback_card.clicked.connect(
-            self.__openUrl("https://github.com/KIYI671/AhabAssistantLimbusCompany/issues")
+            self.__openUrl("https://github.com/galact-byte/AhabAssistantLimbusCompany/issues")
         )
 
     def __onGamePathCardClicked(self):
