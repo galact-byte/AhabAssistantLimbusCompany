@@ -28,6 +28,10 @@ from utils.utils import find_skill3
 
 DEFENSE_FOR_SOLO_TURN_LIMIT = 5
 EVENT_CHOICE_MAX_RETRY_ATTEMPTS = 8
+# 首项连续点击超过此次数仍未推进时，兼底改点次项：
+# 用于首项实际不可用（如祭品耗尽）但灰化检测漏判的情况，
+# 避免死点无效首项直到判失败。必须小于 MAX_RETRY 才能生效。
+EVENT_CHOICE_FIRST_OPTION_MAX_ATTEMPTS = 4
 
 
 def _find_daily_battle_settlement_confirmation() -> tuple[int, int] | bool:
@@ -484,11 +488,21 @@ class Battle:
                     sleep(waiting)
                     continue
 
+                if (
+                    next_choice is not None
+                    and event_choice_retry_attempts > EVENT_CHOICE_FIRST_OPTION_MAX_ATTEMPTS
+                ):
+                    _, next_choice_position = next_choice
+                    auto.mouse_click(*next_choice_position)
+                    log.debug("首个日常事件选项多次未推进，兜底改选次项")
+                    sleep(waiting)
+                    continue
+
                 if first_choice is not None:
                     if not auto.click_element("event/select_first_option_assets.png"):
                         auto.mouse_click(*first_choice)
                         log.debug("首个日常事件选项模板失配，OCR 选择首项")
-                    # 选项仍存在时按当前帧状态重试同一可用项；绝不因页面未切换就改点次项。
+                    # 首项可用时优先重试首项；连续多次仍不推进才由上方兜底改点次项。
                     sleep(waiting)
                     continue
 

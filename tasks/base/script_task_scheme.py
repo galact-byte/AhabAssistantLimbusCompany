@@ -405,7 +405,13 @@ def _run_task_sequence(tasks: list[tuple[str, Callable[[], object]]]) -> bool:
     return True
 
 
-def script_task() -> None | int:
+# script_task 的退出哨兵：仅当用户配置了"完成后退出AALC"时返回它。
+# 不能复用 0——任务失败时会 return False，而 Python 中 False == 0 为 True，
+# 会导致失败也被当成"请求退出"从而误关软件。
+EXIT_AALC_SENTINEL = True
+
+
+def script_task() -> bool | None:
     start_time = time()
     # 获取（启动）游戏对游戏窗口进行设置
     init_game()
@@ -494,7 +500,7 @@ def script_task() -> None | int:
             MumuControl.clean_connect()
 
     if should_exit_aalc:
-        return 0
+        return EXIT_AALC_SENTINEL
 
 
 class my_script_task(QThread):
@@ -540,7 +546,7 @@ class my_script_task(QThread):
             if keep_awake_enabled:
                 apply_power_keep_awake(True)
             ret = script_task()
-            if ret == 0:
+            if ret is EXIT_AALC_SENTINEL:
                 mediator.kill_signal.emit()
         finally:
             if keep_awake_enabled:

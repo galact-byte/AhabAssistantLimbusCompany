@@ -438,6 +438,36 @@ def test_fight_uses_ocr_for_an_enabled_first_choice_when_template_fails(
     assert fake_auto.click_frames == [1]
 
 
+def test_fight_falls_back_to_second_choice_when_enabled_first_choice_stays_stuck(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # 真实场景（AALC_v1.5.6 日志 04:22）：“献上土偶”首项祭品耗尽变不可用，
+    # 但看上去仍是彩色（灰化检测判为可用），一直点首项模板却不推进。
+    # 首项多次仍卡住时应兼底改点次项（“献上罪人”永远可用），而非死点到判失败。
+    choice_frame = _choice_entries(
+        _entry("第一个候选", (920, 250, 1021, 279)),
+        _entry("第二个候选", (920, 374, 1022, 402)),
+    )
+    enabled_button = _choice_button_image((220, 20, 20))
+    frames = 8
+
+    fake_auto = _run_choice_fallback_fight(
+        monkeypatch,
+        [choice_frame] * frames,
+        template_click_result=True,
+        stop_when_frames_exhausted=True,
+        is_tool=False,
+        color_frames=[enabled_button] * frames,
+    )
+
+    # 前 4 帧（EVENT_CHOICE_FIRST_OPTION_MAX_ATTEMPTS）点首项模板。
+    assert fake_auto.template_call_frames == [1, 2, 3, 4]
+    # 后续帧兼底改点次项 OCR 中心。
+    assert fake_auto.clicks == [(971, 388)] * 4
+    assert fake_auto.click_frames == [5, 6, 7, 8]
+    assert fake_auto.unexpected_event_actions == []
+
+
 class _PersistentChoiceAuto(_ChoiceFallbackAuto):
     def __init__(
         self,
