@@ -10,7 +10,7 @@ from tasks import all_sinners_name, all_sinners_name_zh, all_systems, system_cn_
 from tasks.base.back_init_menu import back_init_menu
 from tasks.base.retry import retry
 from tasks.mirror import fusion_result, must_be_abandoned, must_purchase
-from tasks.mirror.shop_presence import inspect_mirror_shop_presence, should_end_shop_leave
+from tasks.mirror.shop_presence import inspect_mirror_shop_presence, resolve_shop_leave_dialog, should_end_shop_leave
 from utils.image_utils import ImageUtils
 
 
@@ -1415,6 +1415,15 @@ class Shop:
             loop_count = 30
             auto.model = "clam"
             while True:
+                # 点击成功不代表页面推进；截图失败同样消耗离店预算。
+                loop_count -= 1
+                if loop_count < 0:
+                    log.error("无法退出商店,尝试回到初始界面")
+                    return back_init_menu(allow_restart=False)
+                if loop_count < 20:
+                    auto.model = "normal"
+                if loop_count < 10:
+                    auto.model = "aggressive"
                 # 自动截图
                 if auto.take_screenshot() is None:
                     continue
@@ -1427,24 +1436,21 @@ class Shop:
                     break
                 if auto.click_element("mirror/shop/leave_shop_confirm_assets.png"):
                     continue
-                if auto.click_element("mirror/shop/leave_assets.png"):
+                dialog_visible, confirm_position = resolve_shop_leave_dialog(auto.get_ocr_entries())
+                if dialog_visible:
+                    if confirm_position is not None:
+                        auto.mouse_click(*confirm_position)
+                    sleep(1)
+                    continue
+                if presence.state == "shop" and auto.click_element("mirror/shop/leave_assets.png"):
                     sleep(1)
                     continue
                 if auto.click_element("mirror/shop/heal_sinner/heal_sinner_return_assets.png"):
                     continue
-                loop_count -= 1
-                if loop_count < 20:
-                    auto.model = "normal"
-                if loop_count < 10:
-                    auto.model = "aggressive"
-                    auto.mouse_click_blank(times=3)
-                if loop_count < 0:
-                    log.error("无法退出商店,尝试回到初始界面")
-                    back_init_menu()
-                    break
+
         except self.RestartGame:
-            log.error("执行商店操作期间出现错误，尝试重启游戏")
-            return
+            log.error("执行商店操作期间出现错误，结束本次商店流程")
+            return False
 
     def _get_cost(self, in_heal=False) -> int:
         _MONEY_OCR_TRANSLATION = str.maketrans(

@@ -10,101 +10,81 @@ from utils.image_utils import ImageUtils
 from utils.path_manager import path_manager
 
 
+def get_theme_pack_difficulty():
+    if auto.find_element("mirror/theme_pack/normal_assets.png", take_screenshot=True):
+        return "normal"
+    if auto.find_element("mirror/theme_pack/hard_assets.png"):
+        return "hard"
+    normal_bbox = ImageUtils.get_bbox(ImageUtils.load_image("mirror/theme_pack/normal_assets.png"))
+    hard_bbox = ImageUtils.get_bbox(ImageUtils.load_image("mirror/theme_pack/hard_assets.png"))
+    crop = [min(normal_bbox[0], hard_bbox[0]), min(normal_bbox[1], hard_bbox[1]),
+            max(normal_bbox[2], hard_bbox[2]), max(normal_bbox[3], hard_bbox[3])]
+    text = auto.find_text_element(None, my_crop=crop, only_text=True)
+    if isinstance(text, str):
+        text = text.lower()
+        if ("normal" in text) != ("hard" in text):
+            return "normal" if "normal" in text else "hard"
+
+
+def switch_theme_pack_difficulty(hard_mode=False):
+    target = "hard" if hard_mode else "normal"
+    current = get_theme_pack_difficulty()
+    if current is None:
+        log.info("无法确认当前镜牢主题包难度，继续选择主题包")
+        return
+    if current == target:
+        return
+    if not auto.click_element(f"mirror/theme_pack/{current}_assets.png"):
+        bbox = ImageUtils.get_bbox(ImageUtils.load_image(f"mirror/theme_pack/{current}_assets.png"))
+        auto.mouse_click((bbox[0] + bbox[2]) // 2, (bbox[1] + bbox[3]) // 2)
+    sleep(2)  # 等待难度切换动画结束及主题包重新加载
+    switched = get_theme_pack_difficulty()
+    log.info(f"镜牢主题包难度切换{'成功' if switched == target else '失败'}: {current} -> {switched}")
+
+
 @begin_and_finish_time_log(task_name="选择镜牢主题包")
 # 选择镜牢主题包
-def select_theme_pack(hard_switch=False, floor=None, team_num=None, use_custom_theme_pack_weight=False):
+def select_theme_pack(hard_mode=False, floor=None, team_num=None, use_custom_theme_pack_weight=False):
     loop_count = 30
     auto.model = "clam"
     scale = cfg.set_win_size / 1080
     if path_manager.current_language == "zh_cn":
         theme_pack_list_zh = theme_list.get_effective_theme_pack_list(
-            hard_switch, "zh_cn", team_num, use_custom_theme_pack_weight
+            hard_mode, "zh_cn", team_num, use_custom_theme_pack_weight
         )
         theme_pack_list_en = {}
     elif path_manager.current_language == "en":
         theme_pack_list_zh = {}
         theme_pack_list_en = theme_list.get_effective_theme_pack_list(
-            hard_switch, "en", team_num, use_custom_theme_pack_weight
+            hard_mode, "en", team_num, use_custom_theme_pack_weight
         )
     else:
         theme_pack_list_zh = theme_list.get_effective_theme_pack_list(
-            hard_switch, "zh_cn", team_num, use_custom_theme_pack_weight
+            hard_mode, "zh_cn", team_num, use_custom_theme_pack_weight
         )
         theme_pack_list_en = theme_list.get_effective_theme_pack_list(
-            hard_switch, "en", team_num, use_custom_theme_pack_weight
+            hard_mode, "en", team_num, use_custom_theme_pack_weight
         )
     # 游戏更新后新增的主题包尚未收录时的兜底权重，取自「未知 / unknown」配置项
     unknown_weight = int(theme_pack_list_zh.get("未知", theme_pack_list_en.get("unknown", -5)))
     refresh_times = 3
-    difficulty = None
-    while auto.take_screenshot() is None:
-        continue
-    if is_on_mirror_map(auto):
-        return
     while True:
-        # 自动截图
+        # 截图失败和识别异常也必须消耗预算，不能无限跳过恢复。
+        loop_count -= 1
+        if loop_count < 0:
+            log.error("无法选取主题包,尝试回到初始界面")
+            return back_init_menu(allow_restart=False)
+        if loop_count < 20:
+            auto.model = "normal"
+        if loop_count < 10:
+            auto.model = "aggressive"
         if auto.take_screenshot() is None:
             continue
-
-        if (
-            difficulty is None
-            and auto.find_element("mirror/theme_pack/normal_assets.png") is None
-            and auto.find_element("mirror/theme_pack/hard_assets.png") is None
-        ):
-            if loop_count < 0:
-                break
-            if loop_count < 5:
-                normal_bbox = ImageUtils.get_bbox(ImageUtils.load_image("mirror/theme_pack/normal_assets.png"))
-                hard_bbox = ImageUtils.get_bbox(ImageUtils.load_image("mirror/theme_pack/hard_assets.png"))
-                difficulty_bbox = [
-                    min(normal_bbox[0], hard_bbox[0]),
-                    min(normal_bbox[1], hard_bbox[1]),
-                    max(normal_bbox[2], hard_bbox[2]),
-                    max(normal_bbox[3], hard_bbox[3]),
-                ]
-                ocr_result = auto.find_text_element(None, my_crop=difficulty_bbox, only_text=True)
-                if not isinstance(ocr_result, str):
-                    if auto.take_screenshot() is None:
-                        continue
-                    if is_on_mirror_map(auto):
-                        return
-                    continue
-                if "normal" in ocr_result:
-                    difficulty = "normal"
-                elif "hard" in ocr_result:
-                    difficulty = "hard"
-            loop_count -= 1
-            sleep(1)
-            continue
-
-        # 切换难度
-        if hard_switch:
-            if auto.click_element("mirror/theme_pack/normal_assets.png"):
-                sleep(2)  # 等待卡包加载动画完成
-                continue
-            elif difficulty == "normal":
-                normal_bbox = ImageUtils.get_bbox(ImageUtils.load_image("mirror/theme_pack/normal_assets.png"))
-                auto.mouse_click(
-                    (normal_bbox[0] + normal_bbox[2]) // 2,
-                    (normal_bbox[1] + normal_bbox[3]) // 2,
-                )
-                sleep(2) # 等待卡包加载动画完成
-                continue
-        else:
-            if auto.click_element("mirror/theme_pack/hard_assets.png"):
-                sleep(2) # 等待卡包加载动画完成
-                continue
-            elif difficulty == "hard":
-                hard_bbox = ImageUtils.get_bbox(ImageUtils.load_image("mirror/theme_pack/hard_assets.png"))
-                auto.mouse_click(
-                    (hard_bbox[0] + hard_bbox[2]) // 2,
-                    (hard_bbox[1] + hard_bbox[3]) // 2,
-                )
-                sleep(2) # 等待卡包加载动画完成
-                continue
+        if is_on_mirror_map(auto):
+            return
 
         try:
-            if floor == 4 and cfg.select_event_pack:
+            if floor == 5 and cfg.select_event_pack:
                 if all_theme_pack := auto.find_element(
                     "mirror/theme_pack/theme_pack_features.png",
                     find_type="image_with_multiple_targets",
@@ -123,7 +103,7 @@ def select_theme_pack(hard_switch=False, floor=None, team_num=None, use_custom_t
                 find_type="image_with_multiple_targets",
                 take_screenshot=True,
             ):
-                if floor == 4 and cfg.skip_event_pack:
+                if floor == 5 and cfg.skip_event_pack:
                     all_theme_pack.sort(key=lambda pos: (pos[0], pos[1]))
                     all_theme_pack.pop(0)  # 删除最左边的卡包
                 for pack in all_theme_pack:
@@ -188,17 +168,4 @@ def select_theme_pack(hard_switch=False, floor=None, team_num=None, use_custom_t
                 return
             except Exception as e:
                 log.error(f"选择主题包出错:{e},尝试回到初始界面")
-                back_init_menu()
-                break
-
-        loop_count -= 1
-        if loop_count < 20:
-            auto.model = "normal"
-        if loop_count < 10:
-            auto.model = "aggressive"
-        if loop_count < 0:
-            log.error("无法选取主题包,尝试回到初始界面")
-            back_init_menu()
-            break
-    log.error("无法选取主题包,尝试回到初始界面")
-    back_init_menu()
+                return back_init_menu(allow_restart=False)

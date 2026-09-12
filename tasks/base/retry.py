@@ -197,13 +197,17 @@ def kill_game():
                 MumuControl,
             )
 
-            MumuControl.connection_device.close_current_app()
+            connection_device = MumuControl.connection_device
         else:
             from module.automation.input_handlers.simulator.simulator_control import (
                 SimulatorControl,
             )
 
-            SimulatorControl.connection_device.close_current_app()
+            connection_device = SimulatorControl.connection_device
+        if connection_device is None:
+            log.warning("模拟器连接当前不可用，跳过关闭游戏；后续初始化将重建连接")
+            return
+        connection_device.close_current_app()
         return
 
     from module.game_and_screen import game_process
