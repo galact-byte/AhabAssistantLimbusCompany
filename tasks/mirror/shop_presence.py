@@ -76,6 +76,32 @@ def inspect_mirror_shop_presence(auto) -> ShopPresence:
     )
 
 
+def resolve_shop_leave_dialog(entries) -> tuple[bool, tuple[int, int] | None]:
+    """离店标题授权弹窗状态；同行、标题下方且取消右侧的唯一确认才可点击。"""
+    titles = [box for text, box in entries if "要离开商店吗" in _normalized(text)]
+    if not titles:
+        return False, None
+    if len(titles) != 1:
+        return True, None
+    x1, y1, x2, y2 = titles[0]
+    width, height = x2 - x1, y2 - y1
+    if width <= 0 or height <= 0:
+        return True, None
+    cancels = [box for text, box in entries if _normalized(text).lstrip("×xX") == "取消"]
+    confirms = [box for text, box in entries if _normalized(text) == "确认"]
+    candidates = []
+    for box in confirms:
+        left, top, right, bottom = box
+        cx, cy = (left + right) // 2, (top + bottom) // 2
+        if not (right > left and bottom > top and y2 < cy < y2 + height * 6
+                and x1 - width / 2 < cx < x2 + width / 2):
+            continue
+        if any(c[2] < left and abs((c[1] + c[3]) / 2 - cy) <= height
+               and c[0] >= x1 - width / 2 for c in cancels):
+            candidates.append((cx, cy))
+    return True, candidates[0] if len(candidates) == 1 else None
+
+
 def should_end_shop_leave(presence: ShopPresence) -> bool:
     return presence.state == "map"
 

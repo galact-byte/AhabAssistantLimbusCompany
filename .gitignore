@@ -42,3 +42,7 @@ __main_dev_temp__.py
 .omc/
 dbg827.log
 issue-evidence/
+# 本地卡顿原始日志，不进入公开提交
+.trellis/tasks/09-12-upstream-sync-stall-audit/research/evidence/
+.trellis/tasks/09-12-upstream-sync-stall-audit/research/log-*.txt
+.trellis/tasks/09-12-upstream-sync-stall-audit/research/log-*.json

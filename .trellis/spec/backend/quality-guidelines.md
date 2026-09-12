@@ -32,6 +32,18 @@ Every page-recovery loop needs an explicit authority for its timeout. If a speci
 
 Windows game launch follows the same rule: `Game.start_game()` creates one pending request, and `init_game()` owns the `monotonic()` deadline while polling `screen.init_handle(start_if_missing=False)`. A poll must never independently re-open Steam. A pending request must be cleared on window success, launch timeout, and every game-close path.
 
+### 商店离开恢复契约
+
+- 触发：离店按钮持续命中却无页面推进，或截图持续失败。
+- 签名：`resolve_shop_leave_dialog(entries) -> (visible, position | None)`；`Shop.in_shop()` 显式 `False` 表示失败。
+- 契约：离店每轮先消耗预算，成功点击不能跳过计数。模板确认优先；OCR 需要离店标题与下方同行的取消/确认几何关系。
+- 错误矩阵：地图证据→正常退出；标题有而确认不明确→等待且消耗预算；预算耗尽→`back_init_menu(allow_restart=False)`；恢复失败→`Mirror.in_shop()` 抛出任务错误，不吞掉失败。
+- 示例：合法弹窗确认可点击；只有“确认”文字不可点击；弹窗存在时不点底层离开。
+- 测试：`test_shop_leave_budget.py` 覆盖点击命中、截图失败、回地图、网络恢复失败及主页恢复结果；`test_shop_leave_dialog.py` 验证授权；`test_mirror_shop_failure.py` 验证包装层传播。
+- 错误写法：`if click_leave(): continue` 放在计数前；正确写法：计数在所有 `continue` 之前。
+- 主题包选择同样在截图和识别异常之前消耗预算，耗尽只恢复一次；`select_theme_pack()` 显式False必须阻止Mirror更新楼层计时。回归：`test_theme_pack_recovery_budget.py`、`test_theme_pack_failure_boundary.py`。
+- `check_team()` 的至少5人候选必须覆盖总人数5–12，不能漏掉 `5/12` 或 `12/12`；参见 `test_team_survival_count.py`。
+
 ### Desktop dialog authorization
 
 A desktop-wide OCR click has a stricter boundary than a game-window OCR click because unrelated windows share the frame. Keep its recognition parser pure and authorize a click only from a complete semantic **and geometric** dialog signature. For the authorized Steam cloud dialog, require all Chinese text anchors (`无法同步`, `未能将您的存档`, `Steam 云同步`, exact `仍然进行游戏`), a continuation button below the body, and a bounded shared dialog region. Consume the one allowed click attempt before invoking the desktop click API so a click exception cannot retry an irreversible action.
