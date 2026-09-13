@@ -2,7 +2,7 @@ import random
 import re
 import time
 from dataclasses import dataclass
-from time import sleep
+from time import monotonic, sleep
 from typing import Callable, Optional
 
 import cv2
@@ -18,6 +18,7 @@ from tasks.base.retry import handle_server_error_dialog, retry
 from tasks.event import event_handling
 from tasks.event.event_handling import resolve_event_page
 from tasks.event_page import (
+    EVENT_RESULT_TIMEOUT,
     find_event_choice_slots,
     is_event_choice_page,
     is_first_event_choice_disabled,
@@ -232,6 +233,7 @@ class Battle:
         in_mirror = False
         daily_settlement_handled = False
         event_choice_retry_attempts = 0
+        event_result_started_at = None
         first_battle_reward = None
         if defense_all_time:
             self.defense_all_time = defense_all_time
@@ -270,12 +272,20 @@ class Battle:
             if auto.get_restore_time() is not None:
                 start_time = max(start_time, auto.get_restore_time())
             if infinite_battle is False and check_times(start_time, timeout=900 + 300 * combat_count, logs=False):
-                from tasks.base.back_init_menu import back_init_menu
-
-                back_init_menu()
+                # check_times 已完成重启及主页确认，不再次返回主页。
                 return False
 
             total_count += 1
+
+            event_resolution = resolve_event_page(auto.get_ocr_entries()) if choice_event_handling else None
+            if event_resolution is not None and event_resolution.reason != "perform_check":
+                if event_result_started_at is None:
+                    event_result_started_at = monotonic()
+                if monotonic() - event_result_started_at >= EVENT_RESULT_TIMEOUT:
+                    log.error("事件结果页持续未推进超过60秒，结束当前战斗并交由调用方恢复")
+                    return False
+            else:
+                event_result_started_at = None
 
             if is_on_mirror_map(auto, use_ocr=False):
                 if infinite_battle:
@@ -513,7 +523,6 @@ class Battle:
                     continue
                 if auto.click_element("event/skip_assets.png", times=6):
                     continue
-                event_resolution = resolve_event_page(auto.get_ocr_entries())
                 if event_resolution is not None:
                     if event_resolution.state == "advance" and event_resolution.position is not None:
                         auto.mouse_click(*event_resolution.position)

@@ -441,16 +441,23 @@ class MainWindow(FramelessWindow):
                 self.raise_()
                 self.activateWindow()
 
-            message_box = MessageBoxConfirm(
-                self.tr("有正在进行的任务"),
-                self.tr("脚本正在运行中，确定要退出程序吗？"),
-                self.window(),
-            )
-            if message_box.exec():
+            if not getattr(self, "_close_after_script", False):
+                message_box = MessageBoxConfirm(
+                    self.tr("有正在进行的任务"),
+                    self.tr("脚本正在运行中，确定要退出程序吗？"),
+                    self.window(),
+                )
+                if not message_box.exec():
+                    e.ignore()
+                    return
+                self._close_after_script = True
                 self.farming_interface.interface_left.my_script.terminate()
-            else:
-                e.ignore()
-                return
+            # 保持事件循环和线程对象存活；不销毁正在进行原生推理的 QThread。
+            e.ignore()
+            QTimer.singleShot(100, self.close)
+            return
+
+        self._close_after_script = False
 
         if self.tools_interface.tools:
             message_box = MessageBoxConfirm(

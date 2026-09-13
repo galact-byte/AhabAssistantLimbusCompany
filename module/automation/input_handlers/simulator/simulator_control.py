@@ -529,13 +529,7 @@ class SimulatorControl(AbstractInput):
         """
         当处于暂停状态时堵塞的进行等待
         """
-        pause_identity = False
-        while self.is_pause:
-            if pause_identity is not False:
-                log.info("AALC 已暂停")
-                pause_identity = True
-            sleep(1)
-            self.restore_time = time()
+        super().wait_pause()
 
     def mouse_click(self, x, y, times=1) -> bool:
         """在指定坐标上执行点击操作

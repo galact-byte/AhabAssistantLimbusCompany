@@ -85,14 +85,14 @@ def test_handle_server_error_dialog_waits_for_game_countdown_and_delayed_gray_ti
     fake_auto.color_screenshot = gray
     calls: list[str] = []
     monkeypatch.setattr(retry_module, "kill_game", lambda: calls.append("kill"))
-    monkeypatch.setattr(retry_module, "restart_game", lambda: calls.append("restart"))
+    monkeypatch.setattr(retry_module, "restart_game", lambda **kw: calls.append(kw))
 
     assert retry_module.handle_server_error_dialog(now=20.0) is True
     assert fake_auto.clicks == []
     assert calls == []
     assert retry_module.handle_server_error_dialog(now=20.0 + retry_module.SERVER_ERROR_DISABLED_TIMEOUT) is False
     assert fake_auto.clicks == [(40, 90)]
-    assert calls == ["kill", "restart"]
+    assert calls == [{"close_first": True}]
 
 
 def test_handle_server_error_dialog_clicks_enabled_single_retry_button_with_throttle(monkeypatch) -> None:

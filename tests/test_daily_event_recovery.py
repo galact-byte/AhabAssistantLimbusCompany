@@ -819,7 +819,7 @@ def test_back_init_menu_stops_after_event_wait_timeout_without_restart(monkeypat
     assert fake_auto.key_presses == []
 
 
-def test_back_init_menu_resets_event_wait_after_allowed_restart(monkeypatch) -> None:
+def test_back_init_menu_returns_confirmed_restart_result_after_event_timeout(monkeypatch) -> None:
     back_init_menu_module = importlib.import_module("tasks.base.back_init_menu")
     retry_module = importlib.import_module("tasks.base.retry")
     fake_auto = _BackInitMenuEventAuto(
@@ -840,10 +840,10 @@ def test_back_init_menu_resets_event_wait_after_allowed_restart(monkeypatch) -> 
     monkeypatch.setattr(back_init_menu_module, "sleep", lambda _seconds: None)
     monkeypatch.setattr(back_init_menu_module, "monotonic", lambda: next(clock))
     monkeypatch.setattr(retry_module, "kill_game", lambda: restart_calls.append("kill"))
-    monkeypatch.setattr(retry_module, "restart_game", lambda: restart_calls.append("restart"))
+    monkeypatch.setattr(retry_module, "restart_game", lambda **kw: restart_calls.append(kw) or True)
 
     assert back_init_menu_module.back_init_menu() is True
-    assert restart_calls == ["kill", "restart"]
+    assert restart_calls == [{"close_first": True}]
 
 
 def _configure_back_init_menu_event_dependencies(
@@ -871,7 +871,7 @@ def test_back_init_menu_keeps_waiting_for_event_result_past_loop_budget(monkeypa
         ],
         home_after_event=True,
     )
-    clock = iter([0.0, 0.0, *[float(second) for second in range(1, 40)]])
+    clock = iter([0.0, 0.0, *[float(second) for second in range(1, 41)]])
     _configure_back_init_menu_event_dependencies(monkeypatch, back_init_menu_module, fake_auto)
     monkeypatch.setattr(back_init_menu_module, "monotonic", lambda: next(clock))
 
@@ -908,7 +908,7 @@ def test_back_init_menu_resets_event_wait_clock_after_non_event_frame(monkeypatc
         home_after_event=True,
         home_at_ocr_call=5,
     )
-    clock = iter((0.0, 0.0, 61.0, 61.0))
+    clock = iter((0.0, 0.0, 61.0, 61.0, 62.0))
     _configure_back_init_menu_event_dependencies(monkeypatch, back_init_menu_module, fake_auto)
     monkeypatch.setattr(back_init_menu_module, "monotonic", lambda: next(clock))
 

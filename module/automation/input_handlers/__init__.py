@@ -1,6 +1,7 @@
-from time import sleep, time
+from time import time
 
 from module.logger import log
+from module.task_control import checkpoint, sleep
 
 
 class AbstractInput:
@@ -28,6 +29,7 @@ class AbstractInput:
         """
         当处于暂停状态时堵塞的进行等待
         """
+        checkpoint()
         pause_identity = False
         while self.is_pause:
             if pause_identity is not False:

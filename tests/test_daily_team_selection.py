@@ -306,7 +306,8 @@ def test_script_task_stops_when_existing_battle_fails(monkeypatch) -> None:
     assert calls == []
 
 
-def test_script_task_stops_before_completion_actions_when_task_sequence_fails(monkeypatch) -> None:
+@pytest.mark.parametrize("cancel_at_completion", [False, True])
+def test_script_task_stops_before_completion_actions_when_task_sequence_fails(monkeypatch, cancel_at_completion) -> None:
     scheme = importlib.import_module("tasks.base.script_task_scheme")
     calls: list[str] = []
     monkeypatch.setattr(scheme, "init_game", lambda: None)
@@ -315,7 +316,19 @@ def test_script_task_stops_before_completion_actions_when_task_sequence_fails(mo
     monkeypatch.setattr(scheme, "send_toast", lambda *_args, **_kwargs: calls.append("toast"))
     monkeypatch.setattr(scheme, "execute_after_completion", lambda *_args: calls.append("complete"))
     monkeypatch.setattr(scheme, "get_after_completion_config", lambda: ([], None))
-    monkeypatch.setattr(scheme, "_run_task_sequence", lambda _tasks: False)
+    from threading import Event
+
+    from module.task_control import TaskCancelled, cancellation_scope
+
+    stop = Event()
+
+    def sequence(_tasks):
+        if cancel_at_completion:
+            stop.set()
+            return True
+        return False
+
+    monkeypatch.setattr(scheme, "_run_task_sequence", sequence)
     monkeypatch.setattr(scheme.path_manager, "initialize_paths", lambda: None)
     monkeypatch.setattr(scheme.auto, "clear_img_cache", lambda: None)
     monkeypatch.setattr(scheme.auto, "click_element", lambda *_args, **_kwargs: False)
@@ -335,5 +348,10 @@ def test_script_task_stops_before_completion_actions_when_task_sequence_fails(mo
         ),
     )
 
-    assert scheme.script_task() is False
+    with cancellation_scope(stop):
+        if cancel_at_completion:
+            with pytest.raises(TaskCancelled):
+                scheme.script_task()
+        else:
+            assert scheme.script_task() is False
     assert calls == []

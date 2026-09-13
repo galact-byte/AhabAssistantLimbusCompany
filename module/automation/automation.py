@@ -13,6 +13,7 @@ import numpy as np
 import psutil
 from PIL.Image import Image
 
+from module.task_control import checkpoint
 from utils.image_utils import ImageUtils
 from utils.path_manager import path_manager
 from utils.singletonmeta import SingletonMeta
@@ -146,7 +147,9 @@ class Automation(metaclass=SingletonMeta):
 
         def wrapper(*args, **kwargs):
             while True:
+                checkpoint()
                 gate_open = self._interaction_gate.wait(timeout=GATE_WAIT_TIMEOUT)
+                checkpoint()
                 with self._input_lock:
                     if gate_open and self._interaction_gate.is_set():
                         method = getattr(self.input_handler, method_name)
@@ -352,7 +355,7 @@ class Automation(metaclass=SingletonMeta):
         return self._take_screenshot(gray=True, keep_color=True)
 
     def _take_screenshot(self, gray: bool, keep_color: bool) -> Image | None:
-        start_time = time.time()
+        checkpoint()
         screenshot_interval_time = cfg.screenshot_interval if cfg.screenshot_interval else 0.85
         while True:
             try:
@@ -365,8 +368,10 @@ class Automation(metaclass=SingletonMeta):
 
                 with self._screenshot_lock:
                     result = ScreenShot.take_screenshot(False if keep_color else gray)
+                    checkpoint()
                     self._remember_screenshot(result)
                 if result:
+                    self._screenshot_failure_started_at = None
                     if keep_color:
                         self.color_screenshot = result.convert("RGB")
                         self.screenshot = self.color_screenshot.convert("L")
@@ -375,18 +380,20 @@ class Automation(metaclass=SingletonMeta):
                     self._full_ocr_cache = None
                     self.last_screenshot_time = time.time()
                     return self.screenshot
-                return None
             except Exception as e:
                 log.error(f"截图失败:{e}")
-            time.sleep(1)
-            if time.time() - start_time > 60:
-                log.error("截图超时，尝试重启游戏")
-                from module.game_and_screen import game_process
-                from tasks.base.script_task_scheme import init_game
+            # 只有业务截图拥有恢复权；监控截图只报告 None，且恢复必须在截图锁外执行。
+            now = time.monotonic()
+            started_at = getattr(self, "_screenshot_failure_started_at", None)
+            if started_at is None:
+                self._screenshot_failure_started_at = now
+            elif now - started_at >= 60:
+                from tasks.base.retry import restart_game
 
-                game_process.close_game()
-                init_game()
-                start_time = time.time()
+                log.warning("业务截图持续不可用，尝试一次有界重启")
+                self._screenshot_failure_started_at = now
+                restart_game(close_first=True)
+            return None
 
     def find_element(
         self,

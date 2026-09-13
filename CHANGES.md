@@ -1,5 +1,24 @@
 # 修改记录 — Ahab Assistant Limbus Company
 
+## v1.5.9 — 事件结果页、镜牢恢复链与协作停止（未游戏实机验证）
+
+### 背景与目标
+- v1.5.8 日志证实结果页约15分钟不推进、重启后主页空转与ONNX原生闪退；修复前两条链及停止时强杀线程的风险，不宣称历史闪退已根治。
+
+### 影响与实现
+- `tasks/event_page.py`、`tasks/battle/battle.py`、`tasks/base/back_init_menu.py`：结果上下文/几何约束的继续与SKIP识别，独立60秒期限，重复点击不刷新期限；不全局降低模板阈值。
+- `tasks/base/retry.py`、`module/automation/{automation,screenshot}.py`：重启所有权覆盖关闭、启动和主页确认；底层/监控截图不自行启动，业务持续截图失败在锁外请求恢复；禁止恢复内嵌套重启。
+- `tasks/mirror/mirror.py`、新增 `tasks/base/home_page.py`：False按地图/主页/未知落点恢复，主页导航OCR辅助与有界重进入口，修正搜索模式被重置。
+- 新增 `tests/test_{event_result_progress,home_navigation,runtime_recovery}.py`，更新日常事件、服务器错误及Steam恢复测试合同。
+- 新增 `module/task_control.py`，修改脚本/监控线程、OCR/截图/输入边界及 `app/{farming_interface,my_app}.py`：协作取消替代强杀，监控真实join后清缓存，Qt finished后允许再次启动；退出意图延后、关闭等待安全退出。覆盖暂停及维护等待、取消不执行完成动作。
+- 未更改运行目录、用户配置或游戏数据。事件、恢复链、生命周期应分别回滚，禁止整库覆盖还原。
+
+### 验证与限制
+- `.venv/Scripts/python.exe -m pytest tests -q`：259 passed in 10.02s（原208）。主会话全量输出在任务 `research/main-full-tests.txt`。
+- `tests/native_stop_probe.py`：隔离进程真实Qt/ONNX六轮，3次推理中重复停止、3次随后正常任务，全部断言通过且退出码0；使用合成图，不操作游戏。
+- compileall、`git diff --check`通过；28个变更Python文件Ruff对HEAD比较无新增诊断（排除既有E722），仍有67条既有诊断，不宣称全库lint全绿。见 `research/main-lint-comparison.json`。
+- 未打包/部署/游戏实机验证；真实SKIP、Steam/模拟器及长时间无人值守仍待验收。没有历史原生dump，不能证明闪退最终触发机制；原生调用永久不返回时仍等待安全结束，不擅自引入进程隔离。
+
 ## 2026-09-12 — 上游融合与商店、主题包卡顿修复（待提交）
 
 ### 背景与目标

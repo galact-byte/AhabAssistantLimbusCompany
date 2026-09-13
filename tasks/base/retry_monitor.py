@@ -6,6 +6,7 @@ import numpy as np
 
 from module.automation import auto
 from module.logger import log
+from module.task_control import TaskCancelled, cancellation_scope
 from utils.image_utils import ImageUtils
 
 
@@ -53,14 +54,19 @@ class RetryMonitor:
             self._thread.start()
             log.debug("通用服务器重试监控线程已启动")
 
+    def request_stop(self) -> None:
+        self._stop_event.set()
+
     def stop(self) -> None:
         """停止监控并确保业务点击门恢复。"""
         with self._lifecycle_lock:
             thread = self._thread
-            self._thread = None
             self._stop_event.set()
         if thread is not None and thread is not threading.current_thread():
-            thread.join(timeout=2)
+            thread.join()
+        with self._lifecycle_lock:
+            if self._thread is thread:
+                self._thread = None
         self._handling_retry = False
         self._clear_frames = 0
         auto.resume_interactions()
@@ -100,7 +106,7 @@ class RetryMonitor:
         """检查一次重试弹窗，返回本轮是否执行了点击。"""
         if screenshot is None:
             screenshot = auto.take_monitor_screenshot(max_age=self.screenshot_max_age)
-        if screenshot is None:
+        if screenshot is None or self._stop_event.is_set():
             return False
         if auto.check_pause() and not self._handling_retry:
             return False
@@ -129,6 +135,8 @@ class RetryMonitor:
         if now - self._last_click_time < self.click_cooldown:
             return False
 
+        if self._stop_event.is_set():
+            return False
         auto.monitor_mouse_click(retry_position[0], retry_position[1])
         auto.invalidate_screenshot_cache()
         self._last_click_time = now
@@ -136,11 +144,15 @@ class RetryMonitor:
         return True
 
     def _run(self) -> None:
-        while not self._stop_event.wait(self.poll_interval):
-            try:
-                self.check_once()
-            except Exception:
-                log.exception("通用服务器重试监控线程处理异常")
+        try:
+            with cancellation_scope(self._stop_event):
+                while not self._stop_event.wait(self.poll_interval):
+                    try:
+                        self.check_once()
+                    except Exception:
+                        log.exception("通用服务器重试监控线程处理异常")
+        except TaskCancelled:
+            pass
 
 
 retry_monitor = RetryMonitor()

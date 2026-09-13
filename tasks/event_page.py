@@ -10,6 +10,7 @@ OcrEntry = tuple[str, OcrBounds]
 EVENT_CHOICE_FIRST_SLOT_OFFSET = 105
 EVENT_CHOICE_SLOT_HEIGHT = 124
 EVENT_CHOICE_SLOT_TOLERANCE = 50
+EVENT_RESULT_TIMEOUT = 60.0
 
 # 以首个选项 OCR 中心为锚点推导 beta 事件按钮区域，避免匹配具体事件文案。
 EVENT_CHOICE_BUTTON_LEFT_OFFSET = -112
@@ -134,12 +135,17 @@ def is_first_event_choice_disabled(
 def resolve_event_page(entries: list[OcrEntry]) -> EventPageResolution | None:
     """仅从 OCR 条目判定事件推进、等待或非事件页。"""
     normalized_entries = _normalize_entries(entries)
-    result_visible = any("判定成功" in text or "判定失败" in text for text, _ in normalized_entries)
+    results = [bounds for text, bounds in normalized_entries if text in ("判定成功", "判定失败")]
 
-    if result_visible:
-        for text, bounds in normalized_entries:
-            if "继续" in text:
-                return EventPageResolution("advance", _entry_center(bounds), "continue")
+    if results:
+        # 结果下方的独立按钮才能授权推进；不把剧情中的“继续”当作按钮。
+        for target, reason in (("继续", "continue"), ("SKIP", "result_skip")):
+            for text, bounds in normalized_entries:
+                if text.upper() != target or bounds[0] >= bounds[2] or bounds[1] >= bounds[3]:
+                    continue
+                x, y = _entry_center(bounds)
+                if any(y > result[3] and x >= result[0] for result in results):
+                    return EventPageResolution("advance", (x, y), reason)
         return EventPageResolution("wait", None, "result_animation")
 
     has_event_context = any(
