@@ -17,8 +17,9 @@ from module.my_error.my_error import (
 from module.ocr import ocr
 from tasks import all_systems, observe_system, start_gift
 from tasks.base.back_init_menu import back_init_menu
+from tasks.base.home_page import find_home_drive
 from tasks.base.make_enkephalin_module import make_enkephalin_module
-from tasks.base.retry import retry
+from tasks.base.retry import restart_game, retry
 from tasks.battle import battle
 from tasks.battle.battle import DefenseForSoloState
 from tasks.event import event_handling
@@ -112,7 +113,7 @@ class Mirror:
         return result, time.time() - start
 
     def _fight(self) -> None:
-        _, elapsed = self._time_call(
+        result, elapsed = self._time_call(
             battle.fight,
             avoid_skill_3=self.avoid_skill_3,
             prioritize_skill_3=self.prioritize_skill_3,
@@ -120,6 +121,23 @@ class Mirror:
             defense_for_solo_state=self.defense_for_solo_state,
         )
         self.battle_total_time += elapsed
+        if result is not False:
+            return
+        if auto.take_screenshot() is not None:
+            if is_on_mirror_map(auto):
+                return
+            at_home = bool(auto.find_element("home/window_assets.png", model="normal")) or (
+                find_home_drive(auto.get_ocr_entries()) is not None
+            )
+        else:
+            at_home = False
+        if not at_home:
+            log.warning("镜牢战斗未确认地图落点，尝试有界返回主页")
+            if back_init_menu(allow_restart=False) is not True:
+                if restart_game(close_first=True) is not True:
+                    raise cannotOperateGameError("镜牢战斗恢复未完成")
+        if self.road_to_mir() is False:
+            raise cannotOperateGameError("镜牢战斗恢复后无法重进镜牢")
 
     def _enter_hard_mode_if_needed(self):
         if self.normal_to_hard_floor > 0 and self.floor >= self.normal_to_hard_floor:
@@ -133,6 +151,10 @@ class Mirror:
         auto.model = "clam"
         self.first_battle = True
         while True:
+            loop_count -= 1
+            if loop_count < 0:
+                log.error("无法进入镜牢，结束本次有界恢复")
+                return False
             # 自动截图
             if auto.take_screenshot() is None:
                 continue
@@ -188,6 +210,10 @@ class Mirror:
             if auto.click_element("home/drive_assets.png", model="normal"):
                 sleep(0.5)
                 continue
+            if drive_position := find_home_drive(auto.get_ocr_entries()):
+                auto.mouse_click(*drive_position)
+                sleep(0.5)
+                continue
             if auto.find_element("mirror/road_to_mir/select_team_stars_assets.png"):
                 break
             if auto.find_element("mirror/road_to_mir/dreaming_star/coins_assets.png"):
@@ -196,15 +222,10 @@ class Mirror:
             if auto.find_element("mirror/theme_pack/feature_theme_pack_assets.png"):
                 # 防止卡死在主题包页面
                 break
-            loop_count -= 1
             if loop_count < 20:
                 auto.model = "normal"
             if loop_count < 10:
                 auto.model = "aggressive"
-            if loop_count < 0:
-                log.error("无法进入镜牢,尝试回到初始界面")
-                back_init_menu()
-                break
 
     def run(self):
         # 计时开始
@@ -218,8 +239,7 @@ class Mirror:
         back_menu_count = 0
         # 未到达奖励页不会停止
         while True:
-            if main_loop_count >= 50:
-                auto.model = "clam"  # 防止函数内修改后未还原
+            auto.model = "aggressive" if main_loop_count < 15 else "normal" if main_loop_count < 75 else "clam"
             # 自动截图
             if auto.take_screenshot() is None:
                 continue
@@ -440,14 +460,23 @@ class Mirror:
                 continue
 
             # 在主界面时，开始进入镜牢
-            if auto.click_element("home/drive_assets.png") or auto.find_element("home/window_assets.png"):
+            if (
+                auto.click_element("home/drive_assets.png") or auto.find_element("home/window_assets.png")
+                or find_home_drive(auto.get_ocr_entries()) is not None
+            ):
                 sleep(0.5)
-                if self.road_to_mir() and self.bequest_from_the_previous_game:
+                entered = self.road_to_mir()
+                if entered is False:
+                    raise cannotOperateGameError("无法从主页进入镜牢")
+                if entered and self.bequest_from_the_previous_game:
                     break
                 continue
             # 在镜牢界面，进入镜牢
             if auto.click_element("mirror/road_to_mir/enter_assets.png"):
-                if self.road_to_mir() and self.bequest_from_the_previous_game:
+                entered = self.road_to_mir()
+                if entered is False:
+                    raise cannotOperateGameError("无法从镜牢入口继续")
+                if entered and self.bequest_from_the_previous_game:
                     break
                 continue
 

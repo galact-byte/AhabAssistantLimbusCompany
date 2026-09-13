@@ -2,7 +2,7 @@ import platform
 import random
 from datetime import datetime
 from threading import Event
-from time import monotonic, sleep, time
+from time import monotonic, time
 from typing import Callable
 
 import win32api
@@ -35,6 +35,7 @@ from module.system_actions import (
     execute_after_completion,
     get_after_completion_config,
 )
+from module.task_control import TaskCancelled, cancellation_scope, checkpoint, sleep
 from tasks.base.back_init_menu import back_init_menu
 from tasks.base.make_enkephalin_module import (
     lunacy_to_enkephalin,
@@ -464,6 +465,7 @@ def script_task() -> bool | None:
         log.error("任务序列提前失败，跳过完成提示和完成后操作")
         return False
 
+    checkpoint()
     if cfg.set_reduce_miscontact and not cfg.simulator:
         # 任务已结束，这里只恢复游戏窗口样式，避免把前台重新切回游戏。
         screen.reset_win(activate=False)
@@ -491,6 +493,7 @@ def script_task() -> bool | None:
         # 收尾动作可能主动关闭游戏或模拟器。先停止截图监控，避免设备消失
         # 被误判为断链并触发自动恢复，重新拉起刚关闭的模拟器。
         retry_monitor.stop()
+        checkpoint()
         actions, power_action = get_after_completion_config()
         try:
             should_exit_aalc = execute_after_completion(actions, power_action)
@@ -514,12 +517,18 @@ class my_script_task(QThread):
         # 初始化，构造函数
         super().__init__()
         self.mutex = QMutex()
+        self._stop_event = Event()
+        self.exit_requested = False
 
     def run(self):
         self.mutex.lock()
 
         try:
-            self._run()
+            with cancellation_scope(self._stop_event):
+                checkpoint()
+                self._run()
+        except TaskCancelled:
+            log.info("脚本已在安全边界停止")
         except (
             ConnectionError,
             userStopError,
@@ -538,20 +547,21 @@ class my_script_task(QThread):
             self.exception = e
             log.exception("脚本线程执行失败")
         finally:
-            retry_monitor.stop()
-            self.mutex.unlock()
+            try:
+                retry_monitor.stop()
+                auto.clear_img_cache()
+            finally:
+                self.mutex.unlock()
 
-        mediator.script_finished.emit()
+    @property
+    def stop_requested(self):
+        return self._stop_event.is_set()
 
     def terminate(self):
-        retry_monitor.stop()
-        super().terminate()
-        # TerminateThread 不会释放被杀线程持有的 RLock,换新锁防止后续任务取锁永久阻塞
-        auto.reset_safety_locks()
-
-    """def stop(self):
-        self.running=False
-        self.finished_signal.emit()"""
+        # 兼容旧调用入口，但不再调用 QThread.terminate / TerminateThread。
+        self._stop_event.set()
+        retry_monitor.request_stop()
+        log.debug("已请求协作停止，等待当前原生调用和监控线程退出")
 
     def _run(self):
         keep_awake_enabled = bool(cfg.get_value("experimental_keep_screen_awake", False))
@@ -559,12 +569,13 @@ class my_script_task(QThread):
             if keep_awake_enabled:
                 apply_power_keep_awake(True)
             ret = script_task()
+            checkpoint()
             if ret is EXIT_AALC_SENTINEL:
-                mediator.kill_signal.emit()
+                self.exit_requested = True
         finally:
             if keep_awake_enabled:
                 # 先切回 AALC 再释放线程级防息屏，避免游戏仍持有前台时继续阻止息屏。
                 mediator.request_focus.emit()
                 self.msleep(800)  # 覆盖 WinRT toast 异步归还焦点（延迟约 600ms），再释放防息屏
                 apply_power_keep_awake(False)
-            auto.clear_img_cache()
+            # 缓存由 run() 在监控真正退出后清理。

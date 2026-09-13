@@ -1,17 +1,19 @@
-from time import monotonic, sleep
+from time import monotonic
 
 from module.automation import auto
 from module.decorator.decorator import begin_and_finish_time_log
 from module.logger import log
+from module.task_control import sleep
 from tasks.base import update_model_for_retry
 from tasks.base.retry import click_title_screen_safely, ensure_simulator_game_started, retry
 from tasks.event.event_handling import resolve_event_page
+from tasks.event_page import EVENT_RESULT_TIMEOUT
 from tasks.mirror.reward_card import get_reward_card
 from tasks.mirror.shop_presence import is_on_mirror_map
 
 LOOP_COUNT = 30
 LOADING_TIMEOUT = 90
-EVENT_PAGE_WAIT_TIMEOUT = 60
+EVENT_PAGE_WAIT_TIMEOUT = EVENT_RESULT_TIMEOUT
 
 @begin_and_finish_time_log(task_name="返回主界面")
 def back_init_menu(*, allow_restart: bool = True):
@@ -26,16 +28,10 @@ def back_init_menu(*, allow_restart: bool = True):
             if not allow_restart:
                 log.warning("无法返回主界面，本次调用禁用内部重启，返回失败")
                 return False
-            from tasks.base.retry import kill_game, restart_game
+            from tasks.base.retry import restart_game
 
             log.error("无法返回主界面，尝试重启游戏")
-            kill_game()
-            restart_game()
-            loop_count = LOOP_COUNT
-            event_wait_started_at = None
-            auto.model = "clam"
-            sleep(1)
-            continue
+            return restart_game(close_first=True)
         if ensure_simulator_game_started():
             continue
         if retry() is False:
@@ -43,13 +39,7 @@ def back_init_menu(*, allow_restart: bool = True):
 
         resolution = resolve_event_page(auto.get_ocr_entries())
         if resolution is not None:
-            if resolution.state == "advance" and resolution.position is not None:
-                auto.mouse_click(*resolution.position)
-                log.debug(f"OCR推进事件页: {resolution.reason}")
-                event_wait_started_at = None
-                continue
-
-            if resolution.state == "advance":
+            if resolution.state == "advance" and resolution.position is None:
                 log.warning("OCR事件页推进结果缺少坐标，按等待状态处理")
             if event_wait_started_at is None:
                 event_wait_started_at = monotonic()
@@ -57,7 +47,11 @@ def back_init_menu(*, allow_restart: bool = True):
                 # 事件结果动画可持续约 40 秒；仅由单调事件时钟限制等待，
                 # 不能让通用页面恢复预算先行耗尽。
                 loop_count = LOOP_COUNT
-                log.debug("事件结果页等待推进按钮出现")
+                if resolution.state == "advance" and resolution.position is not None:
+                    auto.mouse_click(*resolution.position)
+                    log.debug(f"OCR推进事件页: {resolution.reason}")
+                else:
+                    log.debug("事件结果页等待推进按钮出现")
                 sleep(1)
                 continue
             if not allow_restart:
@@ -72,6 +66,9 @@ def back_init_menu(*, allow_restart: bool = True):
             return True
 
         if auto.find_element("base/notification_close_assets.png"):
+            if not allow_restart:
+                log.warning("检测到维护提示且本次调用禁用内部重启，返回失败")
+                return False
             from datetime import datetime
             from zoneinfo import ZoneInfo
 
@@ -91,11 +88,7 @@ def back_init_menu(*, allow_restart: bool = True):
                     msg = f"当前时间为Limbus周常维护时间，距离正常维护时间结束还有{total_seconds}秒，脚本程序将暂停同样时间"
                     log.info(msg)
                     sleep(total_seconds)
-            if not allow_restart:
-                log.warning("检测到维护提示且本次调用禁用内部重启，返回失败")
-                return False
-            restart_game()
-            continue
+            return restart_game()
 
         if auto.click_element("mirror/road_in_mir/towindow&forfeit_confirm_assets.png"):
             continue

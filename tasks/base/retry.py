@@ -1,7 +1,7 @@
 import re
 import time
 from dataclasses import dataclass
-from time import sleep
+from threading import Lock
 
 import cv2
 import numpy as np
@@ -10,7 +10,10 @@ from module.automation import auto
 from module.config import cfg
 from module.game_and_screen import screen
 from module.logger import log
+from module.task_control import sleep
 from utils.utils import check_game_running
+
+_restart_lock = Lock()
 
 _last_title_screen_tap_time = 0.0
 _last_simulator_alive_check_time = 0.0
@@ -128,8 +131,7 @@ def handle_server_error_dialog(now: float | None = None) -> bool | None:
     log.warning("服务器错误弹窗的重试长时间不可用，关闭弹窗并重启游戏")
     auto.mouse_click(*dialog.close_position)
     _server_error_disabled_since = None
-    kill_game()
-    restart_game()
+    restart_game(close_first=True)
     return False
 
 
@@ -223,8 +225,7 @@ def check_times(start_time, timeout=90, logs=True):
         sleep(1)
     if now_time - start_time > timeout:
         log.info(f"已卡死超过{timeout}秒，尝试关闭重启游戏")
-        kill_game()
-        restart_game()
+        restart_game(close_first=True)
         return True
     else:
         return False
@@ -236,6 +237,7 @@ def retry():
     为保证稳定性，retry 内循环始终刷新截图，避免复用旧帧导致误判。
     """
     start_time = time.time()
+    screenshot_missing_since = None
     is_windows = not cfg.config.simulator
     if is_windows:
         saved_hwnd = screen.handle.hwnd
@@ -250,7 +252,19 @@ def retry():
         if auto.get_restore_time() is not None:
             start_time = max(start_time, auto.get_restore_time())
         if auto.take_screenshot_with_color() is None:
+            now = time.monotonic()
+            if screenshot_missing_since is None:
+                screenshot_missing_since = now
+            elif now - screenshot_missing_since >= 60:
+                if _restart_lock.locked():
+                    from module.my_error.my_error import cannotOperateGameError
+
+                    raise cannotOperateGameError("游戏恢复期间截图持续不可用")
+                restart_game(close_first=True)
+                return False
+            sleep(0.5)
             continue
+        screenshot_missing_since = None
         server_error_result = handle_server_error_dialog()
         if server_error_result is False:
             return False
@@ -290,11 +304,22 @@ def retry():
         break
 
 
-def restart_game():
-    """重启游戏"""
+def restart_game(*, close_first=False):
+    """唯一重启拥有者；返回 True 表示已确认主页，False 表示恢复已在进行。"""
+    from module.my_error.my_error import cannotOperateGameError
     from tasks.base.back_init_menu import back_init_menu
     from tasks.base.script_task_scheme import init_game
 
-    init_game()
-    sleep(3)
-    back_init_menu()
+    if not _restart_lock.acquire(blocking=False):
+        log.debug("游戏恢复已在进行，不重复关闭或启动")
+        return False
+    try:
+        if close_first:
+            kill_game()
+        init_game()
+        sleep(3)
+        if back_init_menu(allow_restart=False) is not True:
+            raise cannotOperateGameError("重启后未能确认主页，停止当前恢复")
+        return True
+    finally:
+        _restart_lock.release()

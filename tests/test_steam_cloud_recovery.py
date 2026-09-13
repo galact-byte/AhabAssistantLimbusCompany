@@ -372,7 +372,7 @@ def test_close_game_forces_process_only_after_graceful_timeout(monkeypatch) -> N
     assert forced_commands == [["taskkill", "/F", "/IM", "LimbusCompany.exe"]]
 
 
-def test_background_screenshot_recovery_delegates_to_graceful_game_close(monkeypatch) -> None:
+def test_background_screenshot_defers_restart_to_business_owner(monkeypatch) -> None:
     import module.automation.screenshot as screenshot_module
 
     scheme = importlib.import_module("tasks.base.script_task_scheme")
@@ -382,28 +382,27 @@ def test_background_screenshot_recovery_delegates_to_graceful_game_close(monkeyp
     monkeypatch.setattr(scheme, "init_game", lambda: calls.append("restart"))
 
     assert screenshot_module.ScreenShot.background_screenshot() is None
-    assert calls == ["close", "restart"]
+    assert calls == []
 
 
-def test_automation_screenshot_timeout_delegates_to_graceful_game_close(monkeypatch) -> None:
+def test_automation_screenshot_timeout_delegates_to_recovery_owner(monkeypatch) -> None:
+    import threading
+
     import module.automation.automation as automation_module
-
-    scheme = importlib.import_module("tasks.base.script_task_scheme")
-    calls: list[str] = []
+    retry = importlib.import_module("tasks.base.retry")
+    calls = []
     automation = object.__new__(automation_module.Automation)
     automation.last_screenshot_time = 0.0
+    automation._screenshot_lock = threading.Lock()
     monkeypatch.setattr(automation_module, "cfg", SimpleNamespace(screenshot_interval=0.0))
     monkeypatch.setattr(automation_module.ScreenShot, "take_screenshot", lambda _: (_ for _ in ()).throw(RuntimeError("capture failed")))
-    monkeypatch.setattr(game_and_screen, "game_process", SimpleNamespace(close_game=lambda: calls.append("close")))
-    monkeypatch.setattr(scheme, "init_game", lambda: calls.append("restart"))
-    times = iter((0.0, 61.0, 61.0))
-    monkeypatch.setattr(automation_module.time, "time", lambda: next(times))
-    monkeypatch.setattr(automation_module.time, "sleep", lambda _: None)
-
-    with pytest.raises(StopIteration):
-        automation.take_screenshot()
-
-    assert calls == ["close", "restart"]
+    monkeypatch.setattr(retry, "restart_game", lambda **kw: calls.append(kw) or True)
+    clock = [0.0]
+    monkeypatch.setattr(automation_module.time, "monotonic", lambda: clock[0])
+    assert automation.take_screenshot() is None
+    clock[0] = 61.0
+    assert automation.take_screenshot() is None
+    assert calls == [{"close_first": True}]
 
 
 def test_all_windows_game_exit_callers_delegate_to_game_close(monkeypatch) -> None:

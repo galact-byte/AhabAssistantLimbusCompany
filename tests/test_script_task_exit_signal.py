@@ -27,7 +27,7 @@ def _make_worker(monkeypatch, script_task_return):
     monkeypatch.setattr(scheme, "cfg", SimpleNamespace(get_value=lambda *_a, **_k: False))
     monkeypatch.setattr(scheme.auto, "clear_img_cache", lambda: None)
 
-    worker = scheme.my_script_task.__new__(scheme.my_script_task)
+    worker = scheme.my_script_task()
     return scheme, worker, fake_mediator
 
 
@@ -49,12 +49,13 @@ def test_run_does_not_exit_aalc_when_completed_without_exit_action(monkeypatch) 
     assert fake_mediator.kill_signal.emitted == 0
 
 
-def test_run_exits_aalc_when_exit_action_requested(monkeypatch) -> None:
-    # 成功且配置了"退出AALC"时，script_task 返回退出哨兵，应触发退出信号。
+def test_run_defers_exit_until_thread_finished(monkeypatch) -> None:
+    # 原生资源收尾完成前只保存意图，退出由 QThread.finished 的 UI 槽执行。
     scheme, worker, fake_mediator = _make_worker(monkeypatch, True)
 
     worker._run()
 
-    assert fake_mediator.kill_signal.emitted == 1
+    assert worker.exit_requested is True
+    assert fake_mediator.kill_signal.emitted == 0
     # 哨兵语义应稳定：退出请求用 True 表达，不再复用 0。
     assert scheme.EXIT_AALC_SENTINEL is True

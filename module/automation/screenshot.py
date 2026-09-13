@@ -235,12 +235,9 @@ class ScreenShot:
             return pil_image
 
         except (pywintypes.error, withOutGameWinError) as e:
-            log.error(f"后台截图报错: {e}，尝试重启游戏")
-            from module.game_and_screen import game_process
-            from tasks.base.script_task_scheme import init_game
-
-            game_process.close_game()
-            init_game()
+            # 截图也被监控线程使用；窗口暂时消失只能报告不可用，不能抢占启动流程。
+            log.debug(f"后台截图暂不可用: {e}")
+            return None
 
         except ValueError:
             if screen.handle.isMinimized:

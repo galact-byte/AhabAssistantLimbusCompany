@@ -7,6 +7,7 @@ from PIL import Image
 from rapidocr import EngineType, LangDet, LangRec, ModelType, OCRVersion, RapidOCR
 from rapidocr.utils.output import RapidOCROutput
 
+from module.task_control import checkpoint
 from utils.singletonmeta import SingletonMeta
 
 
@@ -29,6 +30,7 @@ class OCR(metaclass=SingletonMeta):
 
     def run(self, image: Image.Image | np.ndarray | str) -> RapidOCROutput:
         """执行OCR识别，支持Image对象、文件路径和np.ndarray对象"""
+        checkpoint()
         try:
             if isinstance(image, str):
                 with Image.open(image) as image_file:
@@ -61,6 +63,7 @@ class OCR(metaclass=SingletonMeta):
             clahe = createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
             processed_image = clahe.apply(img_cv_gray)
             results = self.engine(processed_image)
+            checkpoint()
             self.log_results(results)
             return results
         except Exception as e:

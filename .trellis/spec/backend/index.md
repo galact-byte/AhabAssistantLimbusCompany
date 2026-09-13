@@ -17,6 +17,7 @@ This directory contains guidelines for backend development. Fill in each file wi
 | [Directory Structure](./directory-structure.md) | Module organization and file layout | To fill |
 | [Database Guidelines](./database-guidelines.md) | ORM patterns, queries, migrations | To fill |
 | [Error Handling](./error-handling.md) | Bounded daily event recovery contracts and failure exits | Active |
+| [运行恢复](./runtime-recovery.md) | 结果页期限、重启所有权与镜牢恢复落点合同 | Active |
 | [Quality Guidelines](./quality-guidelines.md) | Automation state-machine boundaries and regression requirements | Active |
 | [Logging Guidelines](./logging-guidelines.md) | State-transition logging and recovery log levels | Active |
 
