@@ -1,0 +1,72 @@
+....................FFFF.....                                                                                  [100%]
+===================================================== FAILURES ======================================================
+_________________________ test_ordered_selection_does_not_scan_unrelated_distant_duplicate __________________________
+
+screen = <test_team_visual_selection.ListScreen object at 0x000001F0CBB14A10>
+
+    def test_ordered_selection_does_not_scan_unrelated_distant_duplicate(screen):
+        screen.names[-1] = screen.names[1]
+>       assert formation.select_battle_team(2) is True
+E       assert False is True
+E        +  where False = <function begin_and_finish_time_log.<locals>.decorator.<locals>.wrapper at 0x000001F0CB8E0540>(2)
+E        +    where <function begin_and_finish_time_log.<locals>.decorator.<locals>.wrapper at 0x000001F0CB8E0540> = formation.select_battle_team
+
+E:\vsCode\Programs\AhabAssistantLimbusCompany\tests\test_team_visual_selection.py:175: AssertionError
+------------------------------------------------- Captured log call -------------------------------------------------
+ERROR    AALC:team_formation.py:151 选队 2 未通过校验：ValueError: 列表页间顺序不连续或存在重名
+WARNING  AALC:team_formation.py:158 选队失败画面已保存：logs\team-selection-failed-20260920-171504-880255.png
+_______________________________ test_second_slot_does_not_require_full_list_scan[12] ________________________________
+
+screen = <test_team_visual_selection.ListScreen object at 0x000001F0CBB14F50>, count = 12
+
+    @pytest.mark.parametrize("count", [12, 40])
+    def test_second_slot_does_not_require_full_list_scan(screen, count):
+        screen.names = screen.names[:count]
+>       assert formation.select_battle_team(2) is True
+E       assert False is True
+E        +  where False = <function begin_and_finish_time_log.<locals>.decorator.<locals>.wrapper at 0x000001F0CB8E0540>(2)
+E        +    where <function begin_and_finish_time_log.<locals>.decorator.<locals>.wrapper at 0x000001F0CB8E0540> = formation.select_battle_team
+
+E:\vsCode\Programs\AhabAssistantLimbusCompany\tests\test_team_visual_selection.py:183: AssertionError
+------------------------------------------------- Captured log call -------------------------------------------------
+ERROR    AALC:team_formation.py:151 选队 2 未通过校验：ValueError: 列表停滞，仅确认 12/40 个编队
+WARNING  AALC:team_formation.py:158 选队失败画面已保存：logs\team-selection-failed-20260920-171505-347652.png
+_______________________________ test_second_slot_does_not_require_full_list_scan[40] ________________________________
+
+screen = <test_team_visual_selection.ListScreen object at 0x000001F0CBB15010>, count = 40
+
+    @pytest.mark.parametrize("count", [12, 40])
+    def test_second_slot_does_not_require_full_list_scan(screen, count):
+        screen.names = screen.names[:count]
+        assert formation.select_battle_team(2) is True
+        assert screen.selected == "编队#3"
+>       assert len(screen.scrolls) <= 8
+E       assert 67 <= 8
+E        +  where 67 = len([1, 1, -1, -1, -1, -1, ...])
+E        +    where [1, 1, -1, -1, -1, -1, ...] = <test_team_visual_selection.ListScreen object at 0x000001F0CBB15010>.scrolls
+
+E:\vsCode\Programs\AhabAssistantLimbusCompany\tests\test_team_visual_selection.py:185: AssertionError
+___________________________ test_named_visible_target_does_not_require_reset_or_40_slots ____________________________
+
+screen = <test_team_visual_selection.ListScreen object at 0x000001F0CBB15250>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001F0CC18B850>
+
+    def test_named_visible_target_does_not_require_reset_or_40_slots(screen, monkeypatch):
+        monkeypatch.setattr(formation.cfg, "select_team_by_order", False)
+        screen.names = ["编队#2", "编队#20", "编队#3"]
+        screen.stuck = True
+>       assert formation.select_battle_team(2) is True
+E       assert False is True
+E        +  where False = <function begin_and_finish_time_log.<locals>.decorator.<locals>.wrapper at 0x000001F0CB8E0540>(2)
+E        +    where <function begin_and_finish_time_log.<locals>.decorator.<locals>.wrapper at 0x000001F0CB8E0540> = formation.select_battle_team
+
+E:\vsCode\Programs\AhabAssistantLimbusCompany\tests\test_team_visual_selection.py:192: AssertionError
+------------------------------------------------- Captured log call -------------------------------------------------
+ERROR    AALC:team_formation.py:151 选队 2 未通过校验：ValueError: 列表停滞，仅确认 3/40 个编队
+WARNING  AALC:team_formation.py:158 选队失败画面已保存：logs\team-selection-failed-20260920-171505-406186.png
+============================================== short test summary info ==============================================
+FAILED tests/test_team_visual_selection.py::test_ordered_selection_does_not_scan_unrelated_distant_duplicate - asse...
+FAILED tests/test_team_visual_selection.py::test_second_slot_does_not_require_full_list_scan[12] - assert False is ...
+FAILED tests/test_team_visual_selection.py::test_second_slot_does_not_require_full_list_scan[40] - assert 67 <= 8
+FAILED tests/test_team_visual_selection.py::test_named_visible_target_does_not_require_reset_or_40_slots - assert F...
+4 failed, 25 passed in 2.97s
