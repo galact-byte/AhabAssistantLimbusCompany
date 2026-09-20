@@ -1,0 +1,35 @@
+...............F......                                                                                         [100%]
+===================================================== FAILURES ======================================================
+________________________________ test_home_prompt_is_closed_before_reading_team_list ________________________________
+
+screen = <test_team_visual_selection.ListScreen object at 0x0000016C6D478050>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000016C6DA8C890>
+
+    def test_home_prompt_is_closed_before_reading_team_list(screen, monkeypatch):
+        open_prompt = [True]
+        original_find = screen.find_element
+    
+        def find(target, **kwargs):
+            if target in ("home/first_prompt_assets.png", "home/back_assets.png"):
+                return (1, 1) if open_prompt[0] else None
+            return None if open_prompt[0] else original_find(target, **kwargs)
+    
+        def click(target, **kwargs):
+            assert target == "home/back_assets.png"
+            open_prompt[0] = False
+            return True
+    
+        monkeypatch.setattr(screen, "find_element", find)
+        monkeypatch.setattr(screen, "click_element", click)
+>       assert formation.select_battle_team(2) is True
+E       assert False is True
+E        +  where False = <function begin_and_finish_time_log.<locals>.decorator.<locals>.wrapper at 0x0000016C6D254400>(2)
+E        +    where <function begin_and_finish_time_log.<locals>.decorator.<locals>.wrapper at 0x0000016C6D254400> = formation.select_battle_team
+
+E:\vsCode\Programs\AhabAssistantLimbusCompany\tests\test_team_visual_selection.py:154: AssertionError
+------------------------------------------------- Captured log call -------------------------------------------------
+ERROR    AALC:team_formation.py:145 选队 2 未通过校验：ValueError: 截图或编队列表识别不可用
+WARNING  AALC:team_formation.py:152 选队失败画面已保存：logs\team-selection-failed-20260920-170741-434380.png
+============================================== short test summary info ==============================================
+FAILED tests/test_team_visual_selection.py::test_home_prompt_is_closed_before_reading_team_list - assert False is True
+1 failed, 21 passed in 3.07s

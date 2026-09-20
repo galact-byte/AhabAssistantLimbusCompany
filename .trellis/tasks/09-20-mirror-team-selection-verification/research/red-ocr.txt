@@ -1,0 +1,35 @@
+..............F.............                                                                                   [100%]
+===================================================== FAILURES ======================================================
+______________________________ test_ocr_exception_reports_failure_instead_of_escaping _______________________________
+
+screen = <test_team_visual_selection.ListScreen object at 0x000001CAA2E07A00>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001CAA34F4890>
+
+    def test_ocr_exception_reports_failure_instead_of_escaping(screen, monkeypatch):
+        def broken_ocr():
+            raise RuntimeError("OCR unavailable")
+        monkeypatch.setattr(screen, "get_ocr_entries", broken_ocr)
+>       assert formation.select_battle_team(2) is False
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+E:\vsCode\Programs\AhabAssistantLimbusCompany\tests\test_team_visual_selection.py:129: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+E:\vsCode\Programs\AhabAssistantLimbusCompany\module\decorator\decorator.py:18: in wrapper
+    result = func(*args, **kw)
+             ^^^^^^^^^^^^^^^^^
+E:\vsCode\Programs\AhabAssistantLimbusCompany\tasks\teams\team_formation.py:224: in select_battle_team
+    frame = _read_team_frame(scale)
+            ^^^^^^^^^^^^^^^^^^^^^^^
+E:\vsCode\Programs\AhabAssistantLimbusCompany\tasks\teams\team_formation.py:139: in _read_team_frame
+    entries = auto.get_ocr_entries()
+              ^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def broken_ocr():
+>       raise RuntimeError("OCR unavailable")
+E       RuntimeError: OCR unavailable
+
+E:\vsCode\Programs\AhabAssistantLimbusCompany\tests\test_team_visual_selection.py:127: RuntimeError
+============================================== short test summary info ==============================================
+FAILED tests/test_team_visual_selection.py::test_ocr_exception_reports_failure_instead_of_escaping - RuntimeError: ...
+1 failed, 27 passed in 3.01s

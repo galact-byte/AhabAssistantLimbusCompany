@@ -230,6 +230,20 @@ class Input(WinAbstractInput, metaclass=SingletonMeta):
         if move_back and current_mouse_position:
             self.mouse_move(current_mouse_position)
 
+    def mouse_swipe_for_team_scroll(self, x, y, duration=0.3, dx=0, dy=0, move_back=True) -> bool:
+        """编队条目支持长按重排，Windows 只发一个滚轮刻度，不模拟拖动。"""
+        self.wait_pause()
+        if dx or not dy:
+            return False
+        original = self.get_mouse_position() if move_back else None
+        try:
+            pyautogui.moveTo(*self.pos_offset(x, y))
+            pyautogui.scroll(1 if dy > 0 else -1)
+            return True
+        finally:
+            if original is not None:
+                pyautogui.moveTo(*original)
+
     def mouse_scroll(self, direction: int = -3) -> bool:
         if direction <= 0:
             msg = "鼠标滚动滚轮，远离界面"
@@ -440,6 +454,25 @@ class BackgroundInput(WinAbstractInput, metaclass=SingletonMeta):
 
         if move_back and current_mouse_position:
             self.mouse_move(current_mouse_position)
+
+    def mouse_swipe_for_team_scroll(self, x, y, duration=0.3, dx=0, dy=0, move_back=True) -> bool:
+        self.wait_pause()
+        if dx or not dy or not screen.handle.hwnd:
+            return False
+        original = self.get_mouse_position() if move_back else None
+        try:
+            self.set_active()
+            self.set_mouse_pos(x, y)
+            rect = screen.handle.rect(True)
+            position = win32api.MAKELONG(int(rect[0] + x), int(rect[1] + y))
+            delta = 120 if dy > 0 else -120
+            wparam = win32api.MAKELONG(0, delta)
+            send = win32api.PostMessage if self.use_post_message else win32gui.SendMessage
+            send(screen.handle.hwnd, win32con.WM_MOUSEWHEEL, wparam, position)
+            return True
+        finally:
+            if original is not None:
+                self.mouse_move(original)
 
     def mouse_scroll(self, direction: int = -3) -> bool:
         """向游戏窗口发送 WM_MOUSEWHEEL，语义与前台 pyautogui.scroll 相同。
@@ -706,6 +739,11 @@ class WindowMoveInput(WinAbstractInput, metaclass=SingletonMeta):
     def mouse_to_blank(self, coordinate=(1, 1), move_back=False) -> None:
         # FIXME: 移动窗口来防止遮蔽不是一个好选择
         return
+
+    def mouse_swipe_for_team_scroll(self, x, y, duration=0.3, dx=0, dy=0, move_back=True) -> bool:
+        self.wait_pause()
+        # 不支持滚轮时明确失败，绝不回退到可重排条目的拖动。
+        return False
 
     def mouse_scroll(self, direction: int = 120) -> bool:
         return False

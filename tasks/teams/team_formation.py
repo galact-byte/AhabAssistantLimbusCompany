@@ -1,33 +1,15 @@
-import re
-from math import ceil
+from datetime import datetime
+from pathlib import Path
 from time import sleep
 
 from module.automation import auto
 from module.config import cfg
 from module.decorator.decorator import begin_and_finish_time_log
 from module.logger import log
+from tasks.team_list import extend_team_order, matches_team_number, read_team_list, selected_team_matches
 
-WINDOWS_ORDERED_TEAM_PAGE_SWIPE_DISTANCE = 400
 NAMED_TEAM_PAGE_SWIPE_DISTANCE = 385
-TEAM_LIST_RESET_BOTTOM_MARGIN = 60
-ORDERED_TEAM_PAGE_SIZE = 5
 ORDERED_TEAM_COUNT = 40
-ORDERED_TEAM_VISIBLE_ROWS = 6
-ORDERED_TEAM_ROW_HEIGHT = 72.5
-SIMULATOR_ORDERED_TEAM_PAGE_SWIPE_DISTANCE = 375
-ORDERED_TEAM_LAST_PAGE_INDEX = (ORDERED_TEAM_COUNT - 1) // ORDERED_TEAM_PAGE_SIZE
-ORDERED_TEAM_LAST_PAGE_START = ORDERED_TEAM_COUNT - ORDERED_TEAM_VISIBLE_ROWS + 1
-ORDERED_TEAM_BOTTOM_PAGE_OFFSET = ORDERED_TEAM_ROW_HEIGHT / 2
-ORDERED_TEAM_PAGE_SWIPE_DISTANCE = ORDERED_TEAM_ROW_HEIGHT * ORDERED_TEAM_PAGE_SIZE
-ORDERED_TEAM_LAST_PAGE_SWIPE_DISTANCE = (
-    (
-        ORDERED_TEAM_LAST_PAGE_START
-        - 1
-        - (ORDERED_TEAM_LAST_PAGE_INDEX - 1) * ORDERED_TEAM_PAGE_SIZE
-    )
-    * ORDERED_TEAM_ROW_HEIGHT
-    - ORDERED_TEAM_BOTTOM_PAGE_OFFSET
-)
 
 
 # 清队
@@ -78,133 +60,138 @@ def team_formation(sinner_team):
         sleep(cfg.mouse_action_interval)
 
 
-def _ordered_team_page_swipe_distance(page_index=None):
-    if not cfg.simulator:
-        return WINDOWS_ORDERED_TEAM_PAGE_SWIPE_DISTANCE
-    if getattr(cfg, "simulator_type", 10) == 0:
-        if page_index == ORDERED_TEAM_LAST_PAGE_INDEX:
-            return ORDERED_TEAM_LAST_PAGE_SWIPE_DISTANCE
-        return ORDERED_TEAM_PAGE_SWIPE_DISTANCE
-    return SIMULATOR_ORDERED_TEAM_PAGE_SWIPE_DISTANCE
-
-
-def _team_list_reset_swipe_distance(start_y, window_height, scale):
-    """Return a downward reset distance whose endpoint stays inside the client."""
-    return max(0, window_height - start_y - TEAM_LIST_RESET_BOTTOM_MARGIN * scale)
-
-
-def _team_list_reset_swipe_count(reset_distance, scale):
-    """Return enough reset swipes to cover all 40 rows from the bottom."""
-    scroll_extent = (
-        (ORDERED_TEAM_LAST_PAGE_START - 1) * ORDERED_TEAM_ROW_HEIGHT
-        - ORDERED_TEAM_BOTTOM_PAGE_OFFSET
-    ) * scale
-    return ceil(scroll_extent / max(reset_distance, 1))
-
-
-def _ordered_team_location(num):
-    page_count = (num - 1) // ORDERED_TEAM_PAGE_SIZE
-    logical_page_start = page_count * ORDERED_TEAM_PAGE_SIZE + 1
-    visible_page_start = min(logical_page_start, ORDERED_TEAM_LAST_PAGE_START)
-    return page_count, num - visible_page_start
-
-
 def find_named_team_position(num: int, text_positions: dict[str, list[float]]) -> list[float] | bool:
     """从 OCR 结果中查找指定编号的编队名称，并排除预设项。"""
-    expected = str(num)
-    pattern = rf"#\s*{expected}(?!\d)"
-    for text, position in text_positions.items():
-        normalized = text.replace(" ", "")
-        if re.search(r"预设|preset", normalized, flags=re.IGNORECASE):
-            continue
-        if re.search(pattern, normalized, flags=re.IGNORECASE):
-            return position
+    matches = [position for text, position in text_positions.items() if matches_team_number(text, num)]
+    return matches[0] if len(matches) == 1 else False
+
+
+TEAM_FRAME_ATTEMPTS = 3
+TEAM_SCROLL_ATTEMPTS = 100
+TEAM_SELECT_ATTEMPTS = 3
+
+
+def _read_team_frame(scale):
+    for _ in range(TEAM_FRAME_ATTEMPTS):
+        if auto.take_screenshot() is not None:
+            if auto.find_element("home/first_prompt_assets.png", model="clam") and auto.find_element(
+                "home/back_assets.png", model="normal"
+            ):
+                auto.click_element("home/back_assets.png")
+                sleep(0.25)
+                continue
+            identify = auto.find_element("teams/identify_assets.png")
+            if identify:
+                entries = auto.get_ocr_entries()
+                page = read_team_list(entries, identify, scale)
+                if page is not None:
+                    return page, entries, identify
+        sleep(0.25)
+    raise ValueError("截图或编队列表识别不可用")
+
+
+def _scroll_team_list(page, direction, scale):
+    # Windows 的 dy 只有方向语义；模拟器继续使用现有专用手势及像素距离。
+    distance = (NAMED_TEAM_PAGE_SWIPE_DISTANCE * scale if cfg.simulator else 1)
+    row = page.rows[1] if direction > 0 else page.rows[-2]
+    if auto.mouse_swipe_for_team_scroll(*row.position, dy=direction * distance, duration=0.3) is False:
+        raise ValueError("当前输入方式不支持安全编队滚动")
+    sleep(0.35)
+    return _read_team_frame(scale)
+
+
+def _reset_team_list(frame, scale, *, verify_scroll=True):
+    stable = 0
+    for _ in range(TEAM_SCROLL_ATTEMPTS):
+        next_frame = _scroll_team_list(frame[0], 1, scale)
+        stable = stable + 1 if next_frame[0].signature == frame[0].signature else 0
+        frame = next_frame
+        if stable >= 2:
+            if not frame[0].first_row_at_top:
+                raise ValueError("列表停止滚动但首行未完整归顶")
+            if verify_scroll:
+                # 静止也可能是后台滚轮未生效；用一次下滚和回顶验证输入，
+                # 不为证明首行而遍历无关的40个槽。
+                top = frame[0].signature
+                probe = _scroll_team_list(frame[0], -1, scale)
+                if probe[0].signature == top:
+                    raise ValueError("无法确认编队滚轮生效")
+                frame = _reset_team_list(probe, scale, verify_scroll=False)
+                if frame[0].signature != top:
+                    raise ValueError("编队滚动回顶结果不一致")
+            return frame
+    raise ValueError("编队归顶次数耗尽")
+
+
+def _scan_team_order(frame, scale, num):
+    known = frame[0].names
+    stable = 0
+    for _ in range(TEAM_SCROLL_ATTEMPTS):
+        if cfg.select_team_by_order:
+            target = known[num - 1] if len(known) >= num else None
+        else:
+            matches = [name for name in known if matches_team_number(name, num)]
+            if len(matches) > 1:
+                raise ValueError("编号对应多个编队")
+            target = matches[0] if matches else None
+        if target is not None:
+            return target, frame
+        next_frame = _scroll_team_list(frame[0], -1, scale)
+        merged = extend_team_order(known, next_frame[0])
+        if merged is None or len(merged) > ORDERED_TEAM_COUNT:
+            raise ValueError("列表页间顺序不连续或存在重名")
+        known = merged
+        stable = stable + 1 if next_frame[0].signature == frame[0].signature else 0
+        frame = next_frame
+        if stable >= 2:
+            raise ValueError("列表无进展，未找到目标编队")
+    raise ValueError("编队扫描次数耗尽")
+
+
+def _team_selection_failed(num, reason):
+    log.error(f"选队 {num} 未通过校验：{reason}")
+    screenshot = getattr(auto, "screenshot", None)
+    if screenshot is not None:
+        try:
+            path = Path("logs") / f"team-selection-failed-{datetime.now():%Y%m%d-%H%M%S-%f}.png"
+            path.parent.mkdir(parents=True, exist_ok=True)
+            screenshot.save(path)
+            log.warning(f"选队失败画面已保存：{path}")
+        except (OSError, ValueError) as error:
+            log.warning(f"无法保存选队失败画面：{error}")
     return False
 
 
-def _ordered_team_click_offset(page_count, team_order):
-    offset = ORDERED_TEAM_ROW_HEIGHT * team_order
-    if page_count == ORDERED_TEAM_LAST_PAGE_INDEX:
-        offset += ORDERED_TEAM_BOTTOM_PAGE_OFFSET
-    return offset
-
-
 @begin_and_finish_time_log(task_name="寻找队伍")
-# 找队
 def select_battle_team(num):
+    if not isinstance(num, int) or isinstance(num, bool) or not 1 <= num <= ORDERED_TEAM_COUNT:
+        return _team_selection_failed(num, "队伍编号不在1–40内")
     scale = cfg.set_win_size / 1440
-    my_position = [0, 150 * scale]
-    find = False
-    while auto.take_screenshot() is None:
-        continue
-    if auto.find_element("home/first_prompt_assets.png", model="clam") and auto.find_element(
-        "home/back_assets.png", model="normal"
-    ):
-        auto.click_element("home/back_assets.png")
-    if identify_position := auto.find_element("teams/identify_assets.png", take_screenshot=True):
-        position = [identify_position[0] - 2150 * scale, identify_position[1] + 215 * scale]
-        auto.mouse_click(1, 1)
-        my_position[0] += position[0]
-        my_position[1] += position[1]
-        auto.mouse_click(my_position[0], my_position[1])
-        sleep(0.5)
-        reset_distance = _team_list_reset_swipe_distance(
-            my_position[1], cfg.set_win_size, scale
-        )
-        reset_swipe_count = _team_list_reset_swipe_count(reset_distance, scale)
-        for _ in range(reset_swipe_count):
-            auto.mouse_swipe_for_team_scroll(
-                my_position[0], my_position[1], dy=reset_distance, duration=0.3
-            )
-        sleep(0.75)
-        first_position = [position[0], position[1] + 70 * scale]
-        if cfg.select_team_by_order:
-            team_range, team_order = _ordered_team_location(num)
-            for page_index in range(1, team_range + 1):
-                ordered_page_distance = _ordered_team_page_swipe_distance(page_index)
-                auto.mouse_swipe_for_team_scroll(
-                    first_position[0],
-                    first_position[1] + 375 * scale,
-                    dy=-ordered_page_distance * scale,
-                    duration=0.3,
-                )
-                sleep(1)
-            auto.mouse_click(
-                first_position[0],
-                first_position[1]
-                + _ordered_team_click_offset(team_range, team_order) * scale,
-            )
-            log.info(f"成功找到队伍 # {num}")
-            sleep(1)
-            return True
+    try:
+        frame = _read_team_frame(scale)
+        matches = [] if cfg.select_team_by_order else [
+            name for name in frame[0].names if matches_team_number(name, num)
+        ]
+        if len(matches) > 1:
+            raise ValueError("编号对应多个编队")
+        if matches:
+            target = matches[0]
         else:
-            position_bbox = (0, 0, position[0] + 130 * scale, position[1] + 600 * scale)
-            for i in range(10):
-                while auto.take_screenshot() is None:
-                    continue
-                text_positions = auto.get_text_positions(my_crop=position_bbox)
-                if team_position := find_named_team_position(num, text_positions):
-                    auto.mouse_action_with_pos(team_position, offset=False)
-                    find = True
-                    break
-                auto.mouse_swipe_for_team_scroll(
-                    first_position[0],
-                    first_position[1] + 375 * scale,
-                    dy=-NAMED_TEAM_PAGE_SWIPE_DISTANCE * scale,
-                    duration=0.3,
-                )
-                sleep(1)
-                while auto.take_screenshot() is None:
-                    continue
-            if find:
-                msg = f"成功找到队伍 # {num}"
-                log.info(msg)
-                sleep(1)
+            frame = _reset_team_list(frame, scale)
+            target, frame = _scan_team_order(frame, scale, num)
+        for attempt in range(TEAM_SELECT_ATTEMPTS):
+            row = next(row for row in frame[0].rows if row.name == target)
+            auto.mouse_click(*row.position)
+            sleep(0.5)
+            frame = _read_team_frame(scale)
+            if selected_team_matches(frame[1], target, frame[2], scale):
+                log.info(f"选队 {num} 已核验：{target}")
                 return True
-            else:
-                msg = f"找不到队伍 # {num}"
-                log.info(msg)
-                return False
+            log.warning(f"选队结果不一致，重试 {attempt + 1}/{TEAM_SELECT_ATTEMPTS}")
+        return _team_selection_failed(num, "选后标题校验次数耗尽")
+    except Exception as error:
+        # OCR/输入后端异常也必须阻止确认；协作取消是 BaseException，不会被吞掉。
+        return _team_selection_failed(num, f"{type(error).__name__}: {error}")
 
 
 def deal_with_spills():

@@ -76,6 +76,31 @@ else:
 
 Keep a named local retry limit (`EVENT_CHOICE_MAX_RETRY_ATTEMPTS`) for a stable selection page. It must terminate to `False`; it must not consume the event-result animation budget or reset the total battle timeout.
 
+## 编队安全滚动与身份校验
+
+### 1. 触发与范围
+游戏支持长按编队拖动排序，Windows选队不得在条目上按住左键来滚动。按顺序第2项可能叫编队#3，这本身不是误选证据。
+
+### 2. 接口
+`mouse_swipe_for_team_scroll(x, y, duration=0.3, dx=0, dy=0, move_back=True)`：Windows专用覆盖返回bool，dy仅取方向、一次一个滚轮刻度。纯解析位于`tasks/team_list.py`；`select_battle_team(num)`返回True/False。
+
+### 3. 契约
+前后台Windows滚轮定点到编队列表；WM_MOUSEWHEEL坐标为客户端点转换到屏幕坐标。保留交互门、暂停检查与finally鼠标恢复。window_move不支持则False，不能回退拖动；模拟器保留原专用触摸输入。
+按顺序须观察归顶并下滚/回顶验证输入生效，再按页面重叠计数到目标；按名称当前页明确命中可直接选。禁止为了选第二项遍历全部40槽，40是编号上界而非实际槽数前提。只检查经过页面的歧义。
+
+### 4. 错误矩阵
+截图/识别不可用最多3次；单阶段滚动最多100次；点击核验最多3次。静止但无法验证输入、缺行、重名、页间无重叠或标题不一致→False并保存可用失败帧；镜牢与日常不得继续确认/战斗。取消BaseException不能被吞掉。
+
+### 5. 案例
+正常：剧情关卡、编队#3，按顺序2选#3。常规：名称编号2在#20后，滚动到实际条目。错误：用列表中出现#2作为选中证据；必须使用独立顶部当前编队标题。
+
+### 6. 回归
+`test_team_safe_input.py`禁止左键按住、验证wheel坐标/恢复/交互门；`test_team_list_parser.py`覆盖分区、缺行、标题；`test_team_visual_selection.py`覆盖错点纠正、40项边界、多轮、短列表、按需扫描、滚轮停滞和镜牢失败不确认。单元测试不代表1600×900实机滚轮生效。
+
+### 7. 错误与正确
+错误：按旧拖动像素推算滚轮后的固定点击坐标，点击后立即报成功。
+正确：读取本帧条目位置，点击后重截并核验顶部标题；普通地图滚轮不受编队专项变更影响。
+
 ## Forbidden patterns
 
 - **Do not** reset a total task timeout just because a UI animation is being waited on; reset only the local recognition budget when the state is known.
