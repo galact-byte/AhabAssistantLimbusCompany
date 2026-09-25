@@ -54,7 +54,7 @@ def read_team_list(entries, identify_position, scale) -> TeamListPage | None:
     for text, (left, top, right, bottom) in entries:
         cx, cy = (left + right) / 2, (top + bottom) / 2
         if (x - 120 * scale <= left < right <= x + 120 * scale
-                and header[3] + 12 * scale < top < bottom < header_y + 615 * scale):
+                and header[3] + 6 * scale < top < bottom < header_y + 615 * scale):
             name = normalize_team_name(text)
             if not name or re.search(r"预设|preset", name):
                 return None

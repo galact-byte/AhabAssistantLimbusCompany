@@ -22,6 +22,35 @@ def test_parser_preserves_custom_names_and_excludes_title_and_preset(scale):
     assert page.rows[1].position == (244 * scale, 712 * scale)
 
 
+def test_logged_900p_top_row_is_retained():
+    # 两张 2026-09-25 失败截图的 OCR 边框；仅第二张的 #2 横坐标差 1px。
+    for second_left in (132, 133):
+        entries = [
+            ("编队", (140, 344, 184, 371)),
+            ("剧情关卡", (130, 377, 199, 402)),
+            ("编队#2", (second_left, 422, 195, 447)),
+            ("编队#3", (133, 468, 195, 492)),
+            ("编队#4", (133, 513, 195, 537)),
+        ]
+        page = read_team_list(entries, (1505.75, 223.125), 0.625)
+        assert page is not None
+        assert page.names[:2] == ("剧情关卡", "编队#2")
+        assert page.first_row_at_top
+
+
+def test_header_overlap_is_not_treated_as_first_row():
+    entries = [
+        ("编队", (140, 344, 184, 371)),
+        ("剧情关卡", (130, 371, 199, 402)),
+        ("编队#2", (132, 422, 195, 447)),
+        ("编队#3", (133, 468, 195, 492)),
+    ]
+    page = read_team_list(entries, (1505.75, 223.125), 0.625)
+    assert page is not None
+    assert page.names[0] == "编队#2"
+    assert not page.first_row_at_top
+
+
 def test_missing_middle_row_does_not_renumber_later_rows():
     entries = entries_at_scale(1)
     del entries[2]
