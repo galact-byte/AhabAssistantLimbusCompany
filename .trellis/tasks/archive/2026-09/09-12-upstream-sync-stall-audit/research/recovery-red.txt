@@ -1,0 +1,468 @@
+FFFFFFFF                                                                                                         [100%]
+====================================================== FAILURES =======================================================
+_________________________________ test_shop_leave_cannot_spin_forever[True-True-True] _________________________________
+
+screenshot_available = True, dialog_visible = True, recovery_ok = True
+
+    @pytest.mark.parametrize("screenshot_available", [True, False])
+    @pytest.mark.parametrize("dialog_visible", [True, False])
+    @pytest.mark.parametrize("recovery_ok", [True, False])
+    def test_shop_leave_cannot_spin_forever(screenshot_available, dialog_visible, recovery_ok):
+        source = Path(__file__).resolve().parents[1] / "tasks/mirror/in_shop.py"
+        tree = ast.parse(source.read_text(encoding="utf-8"))
+        method = next(n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) and n.name == "in_shop")
+        frames = 0
+        recovered = []
+    
+        def screenshot():
+            nonlocal frames
+            frames += 1
+            assert frames <= 100, "离店无进展超过100帧，恢复预算被绕过"
+            return object() if frames == 1 or screenshot_available else None
+    
+        def click(target):
+            if dialog_visible:
+                assert not target.endswith("/leave_assets.png"), "弹窗存在时不能点底层离开"
+            return target.endswith("/leave_assets.png")
+    
+        auto = SimpleNamespace(
+            model="clam", take_screenshot=screenshot,
+            mouse_click_blank=lambda **_: None,
+            click_element=click,
+            get_ocr_entries=lambda: [("要离开商店吗？", (600, 400, 900, 450))] if dialog_visible else [],
+        )
+        def recover(**kwargs):
+            recovered.append(kwargs)
+            return recovery_ok
+    
+        namespace = {
+            "auto": auto, "sleep": lambda *_: None, "retry": lambda: None,
+            "resolve_shop_leave_dialog": resolve_shop_leave_dialog,
+            "inspect_mirror_shop_presence": lambda _: SimpleNamespace(state="shop"),
+            "should_end_shop_leave": lambda _: False,
+            "back_init_menu": recover,
+            "log": SimpleNamespace(info=lambda *_: None, debug=lambda *_: None, error=lambda *_: None),
+        }
+        exec(compile(ast.Module(body=[method], type_ignores=[]), str(source), "exec"), namespace)
+        shop = SimpleNamespace(
+            ignore_shop=[False] * 5, skill_replacement=False,
+            do_not_heal=True, do_not_sell=True, do_not_buy=True,
+            do_not_fuse=True, do_not_enhance=True, RestartGame=RuntimeError,
+        )
+        result = namespace["in_shop"](shop, 1)
+>       assert recovered == [{"allow_restart": False}]
+E       AssertionError: assert [{}] == [{'allow_restart': False}]
+E         
+E         At index 0 diff: {} != {'allow_restart': False}
+E         Use -v to get more diff
+
+tests\test_shop_leave_budget.py:57: AssertionError
+________________________________ test_shop_leave_cannot_spin_forever[True-True-False] _________________________________
+
+screenshot_available = False, dialog_visible = True, recovery_ok = True
+
+    @pytest.mark.parametrize("screenshot_available", [True, False])
+    @pytest.mark.parametrize("dialog_visible", [True, False])
+    @pytest.mark.parametrize("recovery_ok", [True, False])
+    def test_shop_leave_cannot_spin_forever(screenshot_available, dialog_visible, recovery_ok):
+        source = Path(__file__).resolve().parents[1] / "tasks/mirror/in_shop.py"
+        tree = ast.parse(source.read_text(encoding="utf-8"))
+        method = next(n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) and n.name == "in_shop")
+        frames = 0
+        recovered = []
+    
+        def screenshot():
+            nonlocal frames
+            frames += 1
+            assert frames <= 100, "离店无进展超过100帧，恢复预算被绕过"
+            return object() if frames == 1 or screenshot_available else None
+    
+        def click(target):
+            if dialog_visible:
+                assert not target.endswith("/leave_assets.png"), "弹窗存在时不能点底层离开"
+            return target.endswith("/leave_assets.png")
+    
+        auto = SimpleNamespace(
+            model="clam", take_screenshot=screenshot,
+            mouse_click_blank=lambda **_: None,
+            click_element=click,
+            get_ocr_entries=lambda: [("要离开商店吗？", (600, 400, 900, 450))] if dialog_visible else [],
+        )
+        def recover(**kwargs):
+            recovered.append(kwargs)
+            return recovery_ok
+    
+        namespace = {
+            "auto": auto, "sleep": lambda *_: None, "retry": lambda: None,
+            "resolve_shop_leave_dialog": resolve_shop_leave_dialog,
+            "inspect_mirror_shop_presence": lambda _: SimpleNamespace(state="shop"),
+            "should_end_shop_leave": lambda _: False,
+            "back_init_menu": recover,
+            "log": SimpleNamespace(info=lambda *_: None, debug=lambda *_: None, error=lambda *_: None),
+        }
+        exec(compile(ast.Module(body=[method], type_ignores=[]), str(source), "exec"), namespace)
+        shop = SimpleNamespace(
+            ignore_shop=[False] * 5, skill_replacement=False,
+            do_not_heal=True, do_not_sell=True, do_not_buy=True,
+            do_not_fuse=True, do_not_enhance=True, RestartGame=RuntimeError,
+        )
+        result = namespace["in_shop"](shop, 1)
+>       assert recovered == [{"allow_restart": False}]
+E       AssertionError: assert [{}] == [{'allow_restart': False}]
+E         
+E         At index 0 diff: {} != {'allow_restart': False}
+E         Use -v to get more diff
+
+tests\test_shop_leave_budget.py:57: AssertionError
+________________________________ test_shop_leave_cannot_spin_forever[True-False-True] _________________________________
+
+screenshot_available = True, dialog_visible = False, recovery_ok = True
+
+    @pytest.mark.parametrize("screenshot_available", [True, False])
+    @pytest.mark.parametrize("dialog_visible", [True, False])
+    @pytest.mark.parametrize("recovery_ok", [True, False])
+    def test_shop_leave_cannot_spin_forever(screenshot_available, dialog_visible, recovery_ok):
+        source = Path(__file__).resolve().parents[1] / "tasks/mirror/in_shop.py"
+        tree = ast.parse(source.read_text(encoding="utf-8"))
+        method = next(n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) and n.name == "in_shop")
+        frames = 0
+        recovered = []
+    
+        def screenshot():
+            nonlocal frames
+            frames += 1
+            assert frames <= 100, "离店无进展超过100帧，恢复预算被绕过"
+            return object() if frames == 1 or screenshot_available else None
+    
+        def click(target):
+            if dialog_visible:
+                assert not target.endswith("/leave_assets.png"), "弹窗存在时不能点底层离开"
+            return target.endswith("/leave_assets.png")
+    
+        auto = SimpleNamespace(
+            model="clam", take_screenshot=screenshot,
+            mouse_click_blank=lambda **_: None,
+            click_element=click,
+            get_ocr_entries=lambda: [("要离开商店吗？", (600, 400, 900, 450))] if dialog_visible else [],
+        )
+        def recover(**kwargs):
+            recovered.append(kwargs)
+            return recovery_ok
+    
+        namespace = {
+            "auto": auto, "sleep": lambda *_: None, "retry": lambda: None,
+            "resolve_shop_leave_dialog": resolve_shop_leave_dialog,
+            "inspect_mirror_shop_presence": lambda _: SimpleNamespace(state="shop"),
+            "should_end_shop_leave": lambda _: False,
+            "back_init_menu": recover,
+            "log": SimpleNamespace(info=lambda *_: None, debug=lambda *_: None, error=lambda *_: None),
+        }
+        exec(compile(ast.Module(body=[method], type_ignores=[]), str(source), "exec"), namespace)
+        shop = SimpleNamespace(
+            ignore_shop=[False] * 5, skill_replacement=False,
+            do_not_heal=True, do_not_sell=True, do_not_buy=True,
+            do_not_fuse=True, do_not_enhance=True, RestartGame=RuntimeError,
+        )
+        result = namespace["in_shop"](shop, 1)
+>       assert recovered == [{"allow_restart": False}]
+E       AssertionError: assert [{}] == [{'allow_restart': False}]
+E         
+E         At index 0 diff: {} != {'allow_restart': False}
+E         Use -v to get more diff
+
+tests\test_shop_leave_budget.py:57: AssertionError
+________________________________ test_shop_leave_cannot_spin_forever[True-False-False] ________________________________
+
+screenshot_available = False, dialog_visible = False, recovery_ok = True
+
+    @pytest.mark.parametrize("screenshot_available", [True, False])
+    @pytest.mark.parametrize("dialog_visible", [True, False])
+    @pytest.mark.parametrize("recovery_ok", [True, False])
+    def test_shop_leave_cannot_spin_forever(screenshot_available, dialog_visible, recovery_ok):
+        source = Path(__file__).resolve().parents[1] / "tasks/mirror/in_shop.py"
+        tree = ast.parse(source.read_text(encoding="utf-8"))
+        method = next(n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) and n.name == "in_shop")
+        frames = 0
+        recovered = []
+    
+        def screenshot():
+            nonlocal frames
+            frames += 1
+            assert frames <= 100, "离店无进展超过100帧，恢复预算被绕过"
+            return object() if frames == 1 or screenshot_available else None
+    
+        def click(target):
+            if dialog_visible:
+                assert not target.endswith("/leave_assets.png"), "弹窗存在时不能点底层离开"
+            return target.endswith("/leave_assets.png")
+    
+        auto = SimpleNamespace(
+            model="clam", take_screenshot=screenshot,
+            mouse_click_blank=lambda **_: None,
+            click_element=click,
+            get_ocr_entries=lambda: [("要离开商店吗？", (600, 400, 900, 450))] if dialog_visible else [],
+        )
+        def recover(**kwargs):
+            recovered.append(kwargs)
+            return recovery_ok
+    
+        namespace = {
+            "auto": auto, "sleep": lambda *_: None, "retry": lambda: None,
+            "resolve_shop_leave_dialog": resolve_shop_leave_dialog,
+            "inspect_mirror_shop_presence": lambda _: SimpleNamespace(state="shop"),
+            "should_end_shop_leave": lambda _: False,
+            "back_init_menu": recover,
+            "log": SimpleNamespace(info=lambda *_: None, debug=lambda *_: None, error=lambda *_: None),
+        }
+        exec(compile(ast.Module(body=[method], type_ignores=[]), str(source), "exec"), namespace)
+        shop = SimpleNamespace(
+            ignore_shop=[False] * 5, skill_replacement=False,
+            do_not_heal=True, do_not_sell=True, do_not_buy=True,
+            do_not_fuse=True, do_not_enhance=True, RestartGame=RuntimeError,
+        )
+        result = namespace["in_shop"](shop, 1)
+>       assert recovered == [{"allow_restart": False}]
+E       AssertionError: assert [{}] == [{'allow_restart': False}]
+E         
+E         At index 0 diff: {} != {'allow_restart': False}
+E         Use -v to get more diff
+
+tests\test_shop_leave_budget.py:57: AssertionError
+________________________________ test_shop_leave_cannot_spin_forever[False-True-True] _________________________________
+
+screenshot_available = True, dialog_visible = True, recovery_ok = False
+
+    @pytest.mark.parametrize("screenshot_available", [True, False])
+    @pytest.mark.parametrize("dialog_visible", [True, False])
+    @pytest.mark.parametrize("recovery_ok", [True, False])
+    def test_shop_leave_cannot_spin_forever(screenshot_available, dialog_visible, recovery_ok):
+        source = Path(__file__).resolve().parents[1] / "tasks/mirror/in_shop.py"
+        tree = ast.parse(source.read_text(encoding="utf-8"))
+        method = next(n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) and n.name == "in_shop")
+        frames = 0
+        recovered = []
+    
+        def screenshot():
+            nonlocal frames
+            frames += 1
+            assert frames <= 100, "离店无进展超过100帧，恢复预算被绕过"
+            return object() if frames == 1 or screenshot_available else None
+    
+        def click(target):
+            if dialog_visible:
+                assert not target.endswith("/leave_assets.png"), "弹窗存在时不能点底层离开"
+            return target.endswith("/leave_assets.png")
+    
+        auto = SimpleNamespace(
+            model="clam", take_screenshot=screenshot,
+            mouse_click_blank=lambda **_: None,
+            click_element=click,
+            get_ocr_entries=lambda: [("要离开商店吗？", (600, 400, 900, 450))] if dialog_visible else [],
+        )
+        def recover(**kwargs):
+            recovered.append(kwargs)
+            return recovery_ok
+    
+        namespace = {
+            "auto": auto, "sleep": lambda *_: None, "retry": lambda: None,
+            "resolve_shop_leave_dialog": resolve_shop_leave_dialog,
+            "inspect_mirror_shop_presence": lambda _: SimpleNamespace(state="shop"),
+            "should_end_shop_leave": lambda _: False,
+            "back_init_menu": recover,
+            "log": SimpleNamespace(info=lambda *_: None, debug=lambda *_: None, error=lambda *_: None),
+        }
+        exec(compile(ast.Module(body=[method], type_ignores=[]), str(source), "exec"), namespace)
+        shop = SimpleNamespace(
+            ignore_shop=[False] * 5, skill_replacement=False,
+            do_not_heal=True, do_not_sell=True, do_not_buy=True,
+            do_not_fuse=True, do_not_enhance=True, RestartGame=RuntimeError,
+        )
+        result = namespace["in_shop"](shop, 1)
+>       assert recovered == [{"allow_restart": False}]
+E       AssertionError: assert [{}] == [{'allow_restart': False}]
+E         
+E         At index 0 diff: {} != {'allow_restart': False}
+E         Use -v to get more diff
+
+tests\test_shop_leave_budget.py:57: AssertionError
+________________________________ test_shop_leave_cannot_spin_forever[False-True-False] ________________________________
+
+screenshot_available = False, dialog_visible = True, recovery_ok = False
+
+    @pytest.mark.parametrize("screenshot_available", [True, False])
+    @pytest.mark.parametrize("dialog_visible", [True, False])
+    @pytest.mark.parametrize("recovery_ok", [True, False])
+    def test_shop_leave_cannot_spin_forever(screenshot_available, dialog_visible, recovery_ok):
+        source = Path(__file__).resolve().parents[1] / "tasks/mirror/in_shop.py"
+        tree = ast.parse(source.read_text(encoding="utf-8"))
+        method = next(n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) and n.name == "in_shop")
+        frames = 0
+        recovered = []
+    
+        def screenshot():
+            nonlocal frames
+            frames += 1
+            assert frames <= 100, "离店无进展超过100帧，恢复预算被绕过"
+            return object() if frames == 1 or screenshot_available else None
+    
+        def click(target):
+            if dialog_visible:
+                assert not target.endswith("/leave_assets.png"), "弹窗存在时不能点底层离开"
+            return target.endswith("/leave_assets.png")
+    
+        auto = SimpleNamespace(
+            model="clam", take_screenshot=screenshot,
+            mouse_click_blank=lambda **_: None,
+            click_element=click,
+            get_ocr_entries=lambda: [("要离开商店吗？", (600, 400, 900, 450))] if dialog_visible else [],
+        )
+        def recover(**kwargs):
+            recovered.append(kwargs)
+            return recovery_ok
+    
+        namespace = {
+            "auto": auto, "sleep": lambda *_: None, "retry": lambda: None,
+            "resolve_shop_leave_dialog": resolve_shop_leave_dialog,
+            "inspect_mirror_shop_presence": lambda _: SimpleNamespace(state="shop"),
+            "should_end_shop_leave": lambda _: False,
+            "back_init_menu": recover,
+            "log": SimpleNamespace(info=lambda *_: None, debug=lambda *_: None, error=lambda *_: None),
+        }
+        exec(compile(ast.Module(body=[method], type_ignores=[]), str(source), "exec"), namespace)
+        shop = SimpleNamespace(
+            ignore_shop=[False] * 5, skill_replacement=False,
+            do_not_heal=True, do_not_sell=True, do_not_buy=True,
+            do_not_fuse=True, do_not_enhance=True, RestartGame=RuntimeError,
+        )
+        result = namespace["in_shop"](shop, 1)
+>       assert recovered == [{"allow_restart": False}]
+E       AssertionError: assert [{}] == [{'allow_restart': False}]
+E         
+E         At index 0 diff: {} != {'allow_restart': False}
+E         Use -v to get more diff
+
+tests\test_shop_leave_budget.py:57: AssertionError
+________________________________ test_shop_leave_cannot_spin_forever[False-False-True] ________________________________
+
+screenshot_available = True, dialog_visible = False, recovery_ok = False
+
+    @pytest.mark.parametrize("screenshot_available", [True, False])
+    @pytest.mark.parametrize("dialog_visible", [True, False])
+    @pytest.mark.parametrize("recovery_ok", [True, False])
+    def test_shop_leave_cannot_spin_forever(screenshot_available, dialog_visible, recovery_ok):
+        source = Path(__file__).resolve().parents[1] / "tasks/mirror/in_shop.py"
+        tree = ast.parse(source.read_text(encoding="utf-8"))
+        method = next(n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) and n.name == "in_shop")
+        frames = 0
+        recovered = []
+    
+        def screenshot():
+            nonlocal frames
+            frames += 1
+            assert frames <= 100, "离店无进展超过100帧，恢复预算被绕过"
+            return object() if frames == 1 or screenshot_available else None
+    
+        def click(target):
+            if dialog_visible:
+                assert not target.endswith("/leave_assets.png"), "弹窗存在时不能点底层离开"
+            return target.endswith("/leave_assets.png")
+    
+        auto = SimpleNamespace(
+            model="clam", take_screenshot=screenshot,
+            mouse_click_blank=lambda **_: None,
+            click_element=click,
+            get_ocr_entries=lambda: [("要离开商店吗？", (600, 400, 900, 450))] if dialog_visible else [],
+        )
+        def recover(**kwargs):
+            recovered.append(kwargs)
+            return recovery_ok
+    
+        namespace = {
+            "auto": auto, "sleep": lambda *_: None, "retry": lambda: None,
+            "resolve_shop_leave_dialog": resolve_shop_leave_dialog,
+            "inspect_mirror_shop_presence": lambda _: SimpleNamespace(state="shop"),
+            "should_end_shop_leave": lambda _: False,
+            "back_init_menu": recover,
+            "log": SimpleNamespace(info=lambda *_: None, debug=lambda *_: None, error=lambda *_: None),
+        }
+        exec(compile(ast.Module(body=[method], type_ignores=[]), str(source), "exec"), namespace)
+        shop = SimpleNamespace(
+            ignore_shop=[False] * 5, skill_replacement=False,
+            do_not_heal=True, do_not_sell=True, do_not_buy=True,
+            do_not_fuse=True, do_not_enhance=True, RestartGame=RuntimeError,
+        )
+        result = namespace["in_shop"](shop, 1)
+>       assert recovered == [{"allow_restart": False}]
+E       AssertionError: assert [{}] == [{'allow_restart': False}]
+E         
+E         At index 0 diff: {} != {'allow_restart': False}
+E         Use -v to get more diff
+
+tests\test_shop_leave_budget.py:57: AssertionError
+_______________________________ test_shop_leave_cannot_spin_forever[False-False-False] ________________________________
+
+screenshot_available = False, dialog_visible = False, recovery_ok = False
+
+    @pytest.mark.parametrize("screenshot_available", [True, False])
+    @pytest.mark.parametrize("dialog_visible", [True, False])
+    @pytest.mark.parametrize("recovery_ok", [True, False])
+    def test_shop_leave_cannot_spin_forever(screenshot_available, dialog_visible, recovery_ok):
+        source = Path(__file__).resolve().parents[1] / "tasks/mirror/in_shop.py"
+        tree = ast.parse(source.read_text(encoding="utf-8"))
+        method = next(n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) and n.name == "in_shop")
+        frames = 0
+        recovered = []
+    
+        def screenshot():
+            nonlocal frames
+            frames += 1
+            assert frames <= 100, "离店无进展超过100帧，恢复预算被绕过"
+            return object() if frames == 1 or screenshot_available else None
+    
+        def click(target):
+            if dialog_visible:
+                assert not target.endswith("/leave_assets.png"), "弹窗存在时不能点底层离开"
+            return target.endswith("/leave_assets.png")
+    
+        auto = SimpleNamespace(
+            model="clam", take_screenshot=screenshot,
+            mouse_click_blank=lambda **_: None,
+            click_element=click,
+            get_ocr_entries=lambda: [("要离开商店吗？", (600, 400, 900, 450))] if dialog_visible else [],
+        )
+        def recover(**kwargs):
+            recovered.append(kwargs)
+            return recovery_ok
+    
+        namespace = {
+            "auto": auto, "sleep": lambda *_: None, "retry": lambda: None,
+            "resolve_shop_leave_dialog": resolve_shop_leave_dialog,
+            "inspect_mirror_shop_presence": lambda _: SimpleNamespace(state="shop"),
+            "should_end_shop_leave": lambda _: False,
+            "back_init_menu": recover,
+            "log": SimpleNamespace(info=lambda *_: None, debug=lambda *_: None, error=lambda *_: None),
+        }
+        exec(compile(ast.Module(body=[method], type_ignores=[]), str(source), "exec"), namespace)
+        shop = SimpleNamespace(
+            ignore_shop=[False] * 5, skill_replacement=False,
+            do_not_heal=True, do_not_sell=True, do_not_buy=True,
+            do_not_fuse=True, do_not_enhance=True, RestartGame=RuntimeError,
+        )
+        result = namespace["in_shop"](shop, 1)
+>       assert recovered == [{"allow_restart": False}]
+E       AssertionError: assert [{}] == [{'allow_restart': False}]
+E         
+E         At index 0 diff: {} != {'allow_restart': False}
+E         Use -v to get more diff
+
+tests\test_shop_leave_budget.py:57: AssertionError
+=============================================== short test summary info ===============================================
+FAILED tests/test_shop_leave_budget.py::test_shop_leave_cannot_spin_forever[True-True-True] - AssertionError: assert ...
+FAILED tests/test_shop_leave_budget.py::test_shop_leave_cannot_spin_forever[True-True-False] - AssertionError: assert...
+FAILED tests/test_shop_leave_budget.py::test_shop_leave_cannot_spin_forever[True-False-True] - AssertionError: assert...
+FAILED tests/test_shop_leave_budget.py::test_shop_leave_cannot_spin_forever[True-False-False] - AssertionError: asser...
+FAILED tests/test_shop_leave_budget.py::test_shop_leave_cannot_spin_forever[False-True-True] - AssertionError: assert...
+FAILED tests/test_shop_leave_budget.py::test_shop_leave_cannot_spin_forever[False-True-False] - AssertionError: asser...
+FAILED tests/test_shop_leave_budget.py::test_shop_leave_cannot_spin_forever[False-False-True] - AssertionError: asser...
+FAILED tests/test_shop_leave_budget.py::test_shop_leave_cannot_spin_forever[False-False-False] - AssertionError: asse...
+8 failed in 0.90s

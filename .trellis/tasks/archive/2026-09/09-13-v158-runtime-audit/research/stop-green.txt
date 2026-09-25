@@ -1,0 +1,21 @@
+...........F                                                                                                     [100%]
+====================================================== FAILURES =======================================================
+___________________________________ test_run_exits_aalc_when_exit_action_requested ____________________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000229FDC22E40>
+
+    def test_run_exits_aalc_when_exit_action_requested(monkeypatch) -> None:
+        # 成功且配置了"退出AALC"时，script_task 返回退出哨兵，应触发退出信号。
+        scheme, worker, fake_mediator = _make_worker(monkeypatch, True)
+    
+        worker._run()
+    
+>       assert fake_mediator.kill_signal.emitted == 1
+E       assert 0 == 1
+E        +  where 0 = <test_script_task_exit_signal._RecordingSignal object at 0x00000229FDDEC6B0>.emitted
+E        +    where <test_script_task_exit_signal._RecordingSignal object at 0x00000229FDDEC6B0> = namespace(kill_signal=<test_script_task_exit_signal._RecordingSignal object at 0x00000229FDDEC6B0>, request_focus=<tes...t at 0x00000229FDDEC7C0>, script_finished=<test_script_task_exit_signal._RecordingSignal object at 0x00000229FDC4B150>).kill_signal
+
+tests\test_script_task_exit_signal.py:58: AssertionError
+=============================================== short test summary info ===============================================
+FAILED tests/test_script_task_exit_signal.py::test_run_exits_aalc_when_exit_action_requested - assert 0 == 1
+1 failed, 11 passed in 5.37s

@@ -1,0 +1,167 @@
+{
+  "files": [
+    "app/farming_interface.py",
+    "app/my_app.py",
+    "module/automation/automation.py",
+    "module/automation/input_handlers/__init__.py",
+    "module/automation/input_handlers/simulator/mumu_control.py",
+    "module/automation/input_handlers/simulator/simulator_control.py",
+    "module/automation/screenshot.py",
+    "module/ocr/ocr.py",
+    "module/task_control.py",
+    "tasks/base/back_init_menu.py",
+    "tasks/base/home_page.py",
+    "tasks/base/retry.py",
+    "tasks/base/retry_monitor.py",
+    "tasks/base/script_task_scheme.py",
+    "tasks/battle/battle.py",
+    "tasks/event_page.py",
+    "tasks/mirror/mirror.py",
+    "tests/native_stop_probe.py",
+    "tests/test_cooperative_stop.py",
+    "tests/test_daily_event_recovery.py",
+    "tests/test_daily_team_selection.py",
+    "tests/test_event_result_progress.py",
+    "tests/test_home_navigation.py",
+    "tests/test_runtime_recovery.py",
+    "tests/test_script_task_exit_signal.py",
+    "tests/test_server_error_recovery.py",
+    "tests/test_steam_cloud_recovery.py",
+    "tests/test_stop_ui_lifecycle.py"
+  ],
+  "new_diagnostics": [],
+  "remaining_diagnostics": [
+    {
+      "file": "app/farming_interface.py",
+      "code": "F403",
+      "message": "`from app.base_combination import *` used; unable to detect undefined names",
+      "count": 1
+    },
+    {
+      "file": "app/farming_interface.py",
+      "code": "F403",
+      "message": "`from app.base_tools import *` used; unable to detect undefined names",
+      "count": 1
+    },
+    {
+      "file": "app/farming_interface.py",
+      "code": "F405",
+      "message": "`QVBoxLayout` may be undefined, or defined from star imports",
+      "count": 10
+    },
+    {
+      "file": "app/farming_interface.py",
+      "code": "F405",
+      "message": "`QHBoxLayout` may be undefined, or defined from star imports",
+      "count": 5
+    },
+    {
+      "file": "app/farming_interface.py",
+      "code": "F405",
+      "message": "`QFrame` may be undefined, or defined from star imports",
+      "count": 1
+    },
+    {
+      "file": "app/farming_interface.py",
+      "code": "F405",
+      "message": "`QWidget` may be undefined, or defined from star imports",
+      "count": 6
+    },
+    {
+      "file": "app/farming_interface.py",
+      "code": "F405",
+      "message": "`mediator` may be undefined, or defined from star imports",
+      "count": 16
+    },
+    {
+      "file": "app/farming_interface.py",
+      "code": "F405",
+      "message": "`BaseSettingLayout` may be undefined, or defined from star imports",
+      "count": 1
+    },
+    {
+      "file": "app/farming_interface.py",
+      "code": "F405",
+      "message": "`CheckBoxWithButton` may be undefined, or defined from star imports",
+      "count": 6
+    },
+    {
+      "file": "app/farming_interface.py",
+      "code": "F405",
+      "message": "`NormalTextButton` may be undefined, or defined from star imports",
+      "count": 4
+    },
+    {
+      "file": "app/farming_interface.py",
+      "code": "F405",
+      "message": "`BaseLabel` may be undefined, or defined from star imports",
+      "count": 1
+    },
+    {
+      "file": "app/farming_interface.py",
+      "code": "F405",
+      "message": "`task_check_box` may be undefined, or defined from star imports",
+      "count": 2
+    },
+    {
+      "file": "app/farming_interface.py",
+      "code": "F405",
+      "message": "`ToSettingButton` may be undefined, or defined from star imports",
+      "count": 2
+    },
+    {
+      "file": "app/farming_interface.py",
+      "code": "F405",
+      "message": "`SpinBox` may be undefined, or defined from star imports",
+      "count": 2
+    },
+    {
+      "file": "app/farming_interface.py",
+      "code": "F405",
+      "message": "`toggle_button_group` may be undefined, or defined from star imports",
+      "count": 1
+    },
+    {
+      "file": "app/farming_interface.py",
+      "code": "F405",
+      "message": "`page_name_and_index` may be undefined, or defined from star imports",
+      "count": 1
+    },
+    {
+      "file": "app/my_app.py",
+      "code": "E402",
+      "message": "Module level import not at top of file",
+      "count": 2
+    },
+    {
+      "file": "tasks/mirror/mirror.py",
+      "code": "F841",
+      "message": "Local variable `first_single_plus` is assigned to but never used",
+      "count": 1
+    },
+    {
+      "file": "tasks/mirror/mirror.py",
+      "code": "F841",
+      "message": "Local variable `double_plus_offset` is assigned to but never used",
+      "count": 1
+    },
+    {
+      "file": "tasks/mirror/mirror.py",
+      "code": "F841",
+      "message": "Local variable `star_card_size` is assigned to but never used",
+      "count": 1
+    },
+    {
+      "file": "tasks/mirror/mirror.py",
+      "code": "E712",
+      "message": "Avoid equality comparisons to `False`; use `not scroll:` for false checks",
+      "count": 1
+    },
+    {
+      "file": "tasks/mirror/mirror.py",
+      "code": "E712",
+      "message": "Avoid equality comparisons to `False`; use `not select_system:` for false checks",
+      "count": 1
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+.FFFF                                                                                                            [100%]
+====================================================== FAILURES =======================================================
+_________________________ test_home_navigation_requires_two_aligned_tabs[entries0-expected0] __________________________
+
+entries = [('²£Á§´°', (20, 800, 100, 850)), ('¼ÝÊ»Ï¯', (200, 800, 280, 850))], expected = (240, 825)
+
+    @pytest.mark.parametrize("entries,expected", [
+        ([("²£Á§´°", (20, 800, 100, 850)), ("¼ÝÊ»Ï¯", (200, 800, 280, 850))], (240, 825)),
+        ([("¼ÝÊ»Ï¯", (200, 800, 280, 850))], None),
+        ([("²£Á§´°", (20, 20, 100, 50)), ("¼ÝÊ»Ï¯", (200, 800, 280, 850))], None),
+        ([("²£Á§´°", (20, 800, 100, 850)), ("Ç°Íù¼ÝÊ»Ï¯", (200, 800, 280, 850))], None),
+    ])
+    def test_home_navigation_requires_two_aligned_tabs(entries, expected):
+>       from tasks.base.home_page import find_home_drive
+E       ModuleNotFoundError: No module named 'tasks.base.home_page'
+
+tests\test_home_navigation.py:17: ModuleNotFoundError
+____________________________ test_home_navigation_requires_two_aligned_tabs[entries1-None] ____________________________
+
+entries = [('¼ÝÊ»Ï¯', (200, 800, 280, 850))], expected = None
+
+    @pytest.mark.parametrize("entries,expected", [
+        ([("²£Á§´°", (20, 800, 100, 850)), ("¼ÝÊ»Ï¯", (200, 800, 280, 850))], (240, 825)),
+        ([("¼ÝÊ»Ï¯", (200, 800, 280, 850))], None),
+        ([("²£Á§´°", (20, 20, 100, 50)), ("¼ÝÊ»Ï¯", (200, 800, 280, 850))], None),
+        ([("²£Á§´°", (20, 800, 100, 850)), ("Ç°Íù¼ÝÊ»Ï¯", (200, 800, 280, 850))], None),
+    ])
+    def test_home_navigation_requires_two_aligned_tabs(entries, expected):
+>       from tasks.base.home_page import find_home_drive
+E       ModuleNotFoundError: No module named 'tasks.base.home_page'
+
+tests\test_home_navigation.py:17: ModuleNotFoundError
+____________________________ test_home_navigation_requires_two_aligned_tabs[entries2-None] ____________________________
+
+entries = [('²£Á§´°', (20, 20, 100, 50)), ('¼ÝÊ»Ï¯', (200, 800, 280, 850))], expected = None
+
+    @pytest.mark.parametrize("entries,expected", [
+        ([("²£Á§´°", (20, 800, 100, 850)), ("¼ÝÊ»Ï¯", (200, 800, 280, 850))], (240, 825)),
+        ([("¼ÝÊ»Ï¯", (200, 800, 280, 850))], None),
+        ([("²£Á§´°", (20, 20, 100, 50)), ("¼ÝÊ»Ï¯", (200, 800, 280, 850))], None),
+        ([("²£Á§´°", (20, 800, 100, 850)), ("Ç°Íù¼ÝÊ»Ï¯", (200, 800, 280, 850))], None),
+    ])
+    def test_home_navigation_requires_two_aligned_tabs(entries, expected):
+>       from tasks.base.home_page import find_home_drive
+E       ModuleNotFoundError: No module named 'tasks.base.home_page'
+
+tests\test_home_navigation.py:17: ModuleNotFoundError
+____________________________ test_home_navigation_requires_two_aligned_tabs[entries3-None] ____________________________
+
+entries = [('²£Á§´°', (20, 800, 100, 850)), ('Ç°Íù¼ÝÊ»Ï¯', (200, 800, 280, 850))], expected = None
+
+    @pytest.mark.parametrize("entries,expected", [
+        ([("²£Á§´°", (20, 800, 100, 850)), ("¼ÝÊ»Ï¯", (200, 800, 280, 850))], (240, 825)),
+        ([("¼ÝÊ»Ï¯", (200, 800, 280, 850))], None),
+        ([("²£Á§´°", (20, 20, 100, 50)), ("¼ÝÊ»Ï¯", (200, 800, 280, 850))], None),
+        ([("²£Á§´°", (20, 800, 100, 850)), ("Ç°Íù¼ÝÊ»Ï¯", (200, 800, 280, 850))], None),
+    ])
+    def test_home_navigation_requires_two_aligned_tabs(entries, expected):
+>       from tasks.base.home_page import find_home_drive
+E       ModuleNotFoundError: No module named 'tasks.base.home_page'
+
+tests\test_home_navigation.py:17: ModuleNotFoundError
+=============================================== short test summary info ===============================================
+FAILED tests/test_home_navigation.py::test_home_navigation_requires_two_aligned_tabs[entries0-expected0] - ModuleNotF...
+FAILED tests/test_home_navigation.py::test_home_navigation_requires_two_aligned_tabs[entries1-None] - ModuleNotFoundE...
+FAILED tests/test_home_navigation.py::test_home_navigation_requires_two_aligned_tabs[entries2-None] - ModuleNotFoundE...
+FAILED tests/test_home_navigation.py::test_home_navigation_requires_two_aligned_tabs[entries3-None] - ModuleNotFoundE...
+4 failed, 1 passed in 0.22s

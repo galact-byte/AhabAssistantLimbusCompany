@@ -1,0 +1,82 @@
+app\farming_interface.py:23:1: F403 `from app.base_combination import *` used; unable to detect undefined names
+app\farming_interface.py:24:1: F403 `from app.base_tools import *` used; unable to detect undefined names
+app\farming_interface.py:87:21: F405 `QVBoxLayout` may be undefined, or defined from star imports
+app\farming_interface.py:108:27: F405 `QHBoxLayout` may be undefined, or defined from star imports
+app\farming_interface.py:163:31: F405 `QFrame` may be undefined, or defined from star imports
+app\farming_interface.py:191:21: F405 `QHBoxLayout` may be undefined, or defined from star imports
+app\farming_interface.py:266:25: F405 `QVBoxLayout` may be undefined, or defined from star imports
+app\farming_interface.py:339:24: F405 `QWidget` may be undefined, or defined from star imports
+app\farming_interface.py:343:28: F405 `QHBoxLayout` may be undefined, or defined from star imports
+app\farming_interface.py:344:33: F405 `QVBoxLayout` may be undefined, or defined from star imports
+app\farming_interface.py:345:35: F405 `QVBoxLayout` may be undefined, or defined from star imports
+app\farming_interface.py:346:34: F405 `QVBoxLayout` may be undefined, or defined from star imports
+app\farming_interface.py:368:9: F405 `mediator` may be undefined, or defined from star imports
+app\farming_interface.py:369:9: F405 `mediator` may be undefined, or defined from star imports
+app\farming_interface.py:392:9: F405 `mediator` may be undefined, or defined from star imports
+app\farming_interface.py:395:9: F405 `mediator` may be undefined, or defined from star imports
+app\farming_interface.py:401:28: F405 `QWidget` may be undefined, or defined from star imports
+app\farming_interface.py:418:28: F405 `QVBoxLayout` may be undefined, or defined from star imports
+app\farming_interface.py:419:31: F405 `QVBoxLayout` may be undefined, or defined from star imports
+app\farming_interface.py:420:32: F405 `QVBoxLayout` may be undefined, or defined from star imports
+app\farming_interface.py:423:28: F405 `BaseSettingLayout` may be undefined, or defined from star imports
+app\farming_interface.py:427:28: F405 `CheckBoxWithButton` may be undefined, or defined from star imports
+app\farming_interface.py:435:27: F405 `CheckBoxWithButton` may be undefined, or defined from star imports
+app\farming_interface.py:442:27: F405 `CheckBoxWithButton` may be undefined, or defined from star imports
+app\farming_interface.py:448:31: F405 `CheckBoxWithButton` may be undefined, or defined from star imports
+app\farming_interface.py:454:23: F405 `CheckBoxWithButton` may be undefined, or defined from star imports
+app\farming_interface.py:460:35: F405 `CheckBoxWithButton` may be undefined, or defined from star imports
+app\farming_interface.py:469:27: F405 `NormalTextButton` may be undefined, or defined from star imports
+app\farming_interface.py:472:26: F405 `NormalTextButton` may be undefined, or defined from star imports
+app\farming_interface.py:475:21: F405 `BaseLabel` may be undefined, or defined from star imports
+app\farming_interface.py:478:34: F405 `NormalTextButton` may be undefined, or defined from star imports
+app\farming_interface.py:481:36: F405 `NormalTextButton` may be undefined, or defined from star imports
+app\farming_interface.py:502:28: F405 `QHBoxLayout` may be undefined, or defined from star imports
+app\farming_interface.py:511:37: F405 `QHBoxLayout` may be undefined, or defined from star imports
+app\farming_interface.py:518:26: F405 `task_check_box` may be undefined, or defined from star imports
+app\farming_interface.py:523:26: F405 `task_check_box` may be undefined, or defined from star imports
+app\farming_interface.py:538:13: F405 `mediator` may be undefined, or defined from star imports
+app\farming_interface.py:568:17: F405 `mediator` may be undefined, or defined from star imports
+app\farming_interface.py:577:21: F405 `mediator` may be undefined, or defined from star imports
+app\farming_interface.py:600:17: F405 `mediator` may be undefined, or defined from star imports
+app\farming_interface.py:604:13: F405 `mediator` may be undefined, or defined from star imports
+app\farming_interface.py:654:9: F405 `mediator` may be undefined, or defined from star imports
+app\farming_interface.py:655:9: F405 `mediator` may be undefined, or defined from star imports
+app\farming_interface.py:662:38: F405 `QWidget` may be undefined, or defined from star imports
+app\farming_interface.py:670:21: F405 `ToSettingButton` may be undefined, or defined from star imports
+app\farming_interface.py:674:21: F405 `SpinBox` may be undefined, or defined from star imports
+app\farming_interface.py:686:38: F405 `QWidget` may be undefined, or defined from star imports
+app\farming_interface.py:694:21: F405 `ToSettingButton` may be undefined, or defined from star imports
+app\farming_interface.py:698:21: F405 `SpinBox` may be undefined, or defined from star imports
+app\farming_interface.py:767:9: F405 `mediator` may be undefined, or defined from star imports
+app\farming_interface.py:768:9: F405 `mediator` may be undefined, or defined from star imports
+app\farming_interface.py:769:9: F405 `mediator` may be undefined, or defined from star imports
+app\farming_interface.py:771:9: F405 `mediator` may be undefined, or defined from star imports
+app\farming_interface.py:789:30: F405 `QWidget` may be undefined, or defined from star imports
+app\farming_interface.py:805:21: F405 `QVBoxLayout` may be undefined, or defined from star imports
+app\farming_interface.py:827:14: F405 `toggle_button_group` may be undefined, or defined from star imports
+app\farming_interface.py:832:26: F405 `page_name_and_index` may be undefined, or defined from star imports
+app\farming_interface.py:840:9: F405 `mediator` may be undefined, or defined from star imports
+app\farming_interface.py:850:29: F405 `QWidget` may be undefined, or defined from star imports
+app\farming_interface.py:863:28: F405 `QVBoxLayout` may be undefined, or defined from star imports
+app\my_app.py:73:1: E402 Module level import not at top of file
+app\my_app.py:78:1: E402 Module level import not at top of file
+module\automation\input_handlers\__init__.py:1:1: I001 [*] Import block is un-sorted or un-formatted
+module\automation\input_handlers\simulator\pyminitouch\__init__.py:1:38: F401 `..pyminitouch.connection.safe_connection` imported but unused; consider removing, adding to `__all__`, or using a redundant alias
+module\automation\input_handlers\simulator\pyminitouch\__init__.py:2:22: F401 `.actions.CommandBuilder` imported but unused; consider removing, adding to `__all__`, or using a redundant alias
+module\automation\input_handlers\simulator\pyminitouch\__init__.py:2:38: F401 `.actions.MNTDevice` imported but unused; consider removing, adding to `__all__`, or using a redundant alias
+module\automation\input_handlers\simulator\pyminitouch\__init__.py:2:49: F401 `.actions.safe_device` imported but unused; consider removing, adding to `__all__`, or using a redundant alias
+module\automation\input_handlers\simulator\pyminitouch\actions.py:339:9: F841 Local variable `unique` is assigned to but never used
+module\automation\input_handlers\simulator\pyminitouch\actions.py:340:9: F841 Local variable `head` is assigned to but never used
+module\automation\input_handlers\simulator\pyminitouch\actions.py:341:9: F841 Local variable `tail` is assigned to but never used
+tasks\base\back_init_menu.py:1:1: I001 [*] Import block is un-sorted or un-formatted
+tasks\base\make_enkephalin_module.py:27:21: E741 Ambiguous variable name: `l`
+tasks\base\retry.py:1:1: I001 [*] Import block is un-sorted or un-formatted
+tasks\base\script_task_scheme.py:1:1: I001 [*] Import block is un-sorted or un-formatted
+tasks\mirror\mirror.py:792:9: F841 Local variable `first_single_plus` is assigned to but never used
+tasks\mirror\mirror.py:793:9: F841 Local variable `double_plus_offset` is assigned to but never used
+tasks\mirror\mirror.py:794:9: F841 Local variable `star_card_size` is assigned to but never used
+tasks\mirror\mirror.py:893:98: E712 Avoid equality comparisons to `False`; use `not scroll:` for false checks
+tasks\mirror\mirror.py:904:92: E712 Avoid equality comparisons to `False`; use `not select_system:` for false checks
+tests\test_cooperative_stop.py:19:5: I001 [*] Import block is un-sorted or un-formatted
+Found 80 errors.
+[*] 5 fixable with the `--fix` option (8 hidden fixes can be enabled with the `--unsafe-fixes` option).

@@ -1,0 +1,14 @@
+{
+  "head": "f221d4386826167adbcd668758a84e8284c1baee",
+  "files": {
+    "tasks/mirror/in_shop.py": "77d9ea0b8332090502d782dd1890a1ace76b6b64144d453cbf71ea406c863d15",
+    "tasks/mirror/mirror.py": "b09bb9904fe7244731d6f2a18b4970ce02fd8169a9e4b47a5130f7b2f537da34",
+    "tasks/mirror/search_road.py": "5e7e77472bfc69e5798e7b85b65d1a0c05905dcd77eb6b69d7901ea45d43fbbe",
+    "tasks/mirror/shop_presence.py": "babe3ceed8a099f4ea636a4b6f8f64ad31425010fa517a00ccafa6f6769a8fd1",
+    "tasks/base/retry.py": "d2e1a730164dc88681f4edb26e9a5008fbfd2e1c9d684272dd84d1cf094131d6",
+    "module/automation/automation.py": "c9d7b3e87403570bea75937fa9a71932094c6fe224e1c93727eef369804f4d9d",
+    "app/farming_interface.py": "693b7de91afe571d7704b2bb40252dffe696817e8eafe31c484a5be96caa2879",
+    "tests/test_mirror_shop_presence.py": "a7aae0cd1b54817458a838149e3f1ffb6993116499d9fb0c69e659e85810bf3e",
+    "tests/test_mirror_search_road_recovery.py": "72c77bebaedaad80ff163af5e76f520a779d59323b09c91cc8c5139b33fa5890"
+  }
+}

@@ -1,0 +1,106 @@
+FF                                                                                                               [100%]
+====================================================== FAILURES =======================================================
+_____________________ test_business_screenshot_failure_recovers_once_outside_capture_lock[False] ______________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002433E2D56E0>, raises = False
+
+    @pytest.mark.parametrize("raises", [False, True])
+    def test_business_screenshot_failure_recovers_once_outside_capture_lock(monkeypatch, raises):
+        import threading
+        from PIL import Image
+        module = importlib.import_module("module.automation.automation")
+        retry = importlib.import_module("tasks.base.retry")
+        auto = object.__new__(module.Automation)
+        auto.last_screenshot_time = 0
+        auto._screenshot_lock = threading.Lock()
+        auto._remember_screenshot = lambda _: None
+        operations = []
+        clock = [0.0]
+        image = Image.new("RGB", (2, 2))
+        captures = [0]
+        def capture(_):
+            captures[0] += 1
+            if operations:
+                return image
+            if raises and captures[0] == 1:
+                raise RuntimeError("capture failed")
+            return None
+        def recover(**kwargs):
+            assert auto._screenshot_lock.acquire(blocking=False)
+            auto._screenshot_lock.release()
+            operations.append(kwargs)
+            return True
+        monkeypatch.setattr(module.ScreenShot, "take_screenshot", capture)
+        monkeypatch.setattr(module.time, "monotonic", lambda: clock[0])
+        monkeypatch.setattr(module.time, "sleep", lambda _: None)
+        monkeypatch.setattr(retry, "restart_game", recover)
+        assert auto.take_screenshot() is None
+        clock[0] = 61
+        assert auto.take_screenshot() is None
+>       assert operations == [{"close_first": True}]
+E       AssertionError: assert [] == [{'close_first': True}]
+E         
+E         Right contains one more item: {'close_first': True}
+E         Use -v to get more diff
+
+tests\test_runtime_recovery.py:93: AssertionError
+------------------------------------------------ Captured stderr call -------------------------------------------------
+[32m[INFO] 2026-09-13 16:41:32,397 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-09-13 16:41:32,460 [RapidOCR] download_file.py:60: File exists and is valid: E:\vsCode\Programs\AhabAssistantLimbusCompany\.venv\Lib\site-packages\rapidocr\models\ch_PP-OCRv4_det_infer.onnx[0m
+[32m[INFO] 2026-09-13 16:41:32,460 [RapidOCR] main.py:55: Using E:\vsCode\Programs\AhabAssistantLimbusCompany\.venv\Lib\site-packages\rapidocr\models\ch_PP-OCRv4_det_infer.onnx[0m
+[32m[INFO] 2026-09-13 16:41:32,661 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-09-13 16:41:32,663 [RapidOCR] download_file.py:60: File exists and is valid: E:\vsCode\Programs\AhabAssistantLimbusCompany\.venv\Lib\site-packages\rapidocr\models\ch_ppocr_mobile_v2.0_cls_infer.onnx[0m
+[32m[INFO] 2026-09-13 16:41:32,664 [RapidOCR] main.py:55: Using E:\vsCode\Programs\AhabAssistantLimbusCompany\.venv\Lib\site-packages\rapidocr\models\ch_ppocr_mobile_v2.0_cls_infer.onnx[0m
+[32m[INFO] 2026-09-13 16:41:32,757 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-09-13 16:41:32,773 [RapidOCR] download_file.py:60: File exists and is valid: E:\vsCode\Programs\AhabAssistantLimbusCompany\.venv\Lib\site-packages\rapidocr\models\ch_PP-OCRv4_rec_infer.onnx[0m
+[32m[INFO] 2026-09-13 16:41:32,773 [RapidOCR] main.py:55: Using E:\vsCode\Programs\AhabAssistantLimbusCompany\.venv\Lib\site-packages\rapidocr\models\ch_PP-OCRv4_rec_infer.onnx[0m
+______________________ test_business_screenshot_failure_recovers_once_outside_capture_lock[True] ______________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002433E2D4B00>, raises = True
+
+    @pytest.mark.parametrize("raises", [False, True])
+    def test_business_screenshot_failure_recovers_once_outside_capture_lock(monkeypatch, raises):
+        import threading
+        from PIL import Image
+        module = importlib.import_module("module.automation.automation")
+        retry = importlib.import_module("tasks.base.retry")
+        auto = object.__new__(module.Automation)
+        auto.last_screenshot_time = 0
+        auto._screenshot_lock = threading.Lock()
+        auto._remember_screenshot = lambda _: None
+        operations = []
+        clock = [0.0]
+        image = Image.new("RGB", (2, 2))
+        captures = [0]
+        def capture(_):
+            captures[0] += 1
+            if operations:
+                return image
+            if raises and captures[0] == 1:
+                raise RuntimeError("capture failed")
+            return None
+        def recover(**kwargs):
+            assert auto._screenshot_lock.acquire(blocking=False)
+            auto._screenshot_lock.release()
+            operations.append(kwargs)
+            return True
+        monkeypatch.setattr(module.ScreenShot, "take_screenshot", capture)
+        monkeypatch.setattr(module.time, "monotonic", lambda: clock[0])
+        monkeypatch.setattr(module.time, "sleep", lambda _: None)
+        monkeypatch.setattr(retry, "restart_game", recover)
+        assert auto.take_screenshot() is None
+        clock[0] = 61
+        assert auto.take_screenshot() is None
+>       assert operations == [{"close_first": True}]
+E       AssertionError: assert [] == [{'close_first': True}]
+E         
+E         Right contains one more item: {'close_first': True}
+E         Use -v to get more diff
+
+tests\test_runtime_recovery.py:93: AssertionError
+-------------------------------------------------- Captured log call --------------------------------------------------
+ERROR    AALC:automation.py:380 ½ØÍ¼Ê§°Ü:capture failed
+=============================================== short test summary info ===============================================
+FAILED tests/test_runtime_recovery.py::test_business_screenshot_failure_recovers_once_outside_capture_lock[False] - A...
+FAILED tests/test_runtime_recovery.py::test_business_screenshot_failure_recovers_once_outside_capture_lock[True] - As...
+2 failed, 7 deselected in 2.69s

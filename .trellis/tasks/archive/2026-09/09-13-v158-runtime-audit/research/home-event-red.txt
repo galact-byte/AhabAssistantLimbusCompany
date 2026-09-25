@@ -1,0 +1,27 @@
+............F...                                                                                                 [100%]
+====================================================== FAILURES =======================================================
+___________________________________ test_back_home_repeated_action_is_not_progress ____________________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001BAE7635C50>
+
+    def test_back_home_repeated_action_is_not_progress(monkeypatch):
+        from test_daily_event_recovery import _BackInitMenuEventAuto
+        module = importlib.import_module("tasks.base.back_init_menu")
+        auto = _BackInitMenuEventAuto([[("判定成功", (500, 200, 700, 240)),
+                                        ("继续", (680, 800, 760, 840))]])
+        monkeypatch.setattr(module, "auto", auto)
+        monkeypatch.setattr(module, "ensure_simulator_game_started", lambda: False)
+        monkeypatch.setattr(module, "retry", lambda: True)
+        monkeypatch.setattr(module, "sleep", lambda _: None)
+        monkeypatch.setattr(module, "monotonic", lambda: auto._ocr_calls)
+        assert module.back_init_menu(allow_restart=False) is False
+>       assert 60 <= auto._ocr_calls <= 62
+E       assert 60 <= 30
+E        +  where 30 = <test_daily_event_recovery._BackInitMenuEventAuto object at 0x000001BAEAA9EE40>._ocr_calls
+
+tests\test_event_result_progress.py:62: AssertionError
+-------------------------------------------------- Captured log call --------------------------------------------------
+WARNING  AALC:back_init_menu.py:27 无法返回主界面，本次调用禁用内部重启，返回失败
+=============================================== short test summary info ===============================================
+FAILED tests/test_event_result_progress.py::test_back_home_repeated_action_is_not_progress - assert 60 <= 30
+1 failed, 15 passed in 9.73s

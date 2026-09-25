@@ -1,0 +1,80 @@
+..........F.F..                                                                                                  [100%]
+====================================================== FAILURES =======================================================
+___________________________________ test_retry_missing_frames_has_terminal_deadline ___________________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000021E359517C0>
+
+    def test_retry_missing_frames_has_terminal_deadline(monkeypatch):
+        module = importlib.import_module("tasks.base.retry")
+        calls = []
+        frames = [0]
+        def capture():
+            frames[0] += 1
+            if frames[0] > 4:
+                raise AssertionError("截图失败不能无限绕过恢复期限")
+            return None
+        monkeypatch.setattr(module, "cfg", SimpleNamespace(config=SimpleNamespace(simulator=True)))
+        monkeypatch.setattr(module, "auto", SimpleNamespace(take_screenshot_with_color=capture, get_restore_time=lambda: None))
+        monkeypatch.setattr(module, "ensure_simulator_game_started", lambda: False)
+        monkeypatch.setattr(module.time, "monotonic", lambda: frames[0] * 61)
+        monkeypatch.setattr(module, "sleep", lambda _: None)
+        monkeypatch.setattr(module, "restart_game", lambda **kw: calls.append(kw) or True)
+>       assert module.retry() is False
+               ^^^^^^^^^^^^^^
+
+tests\test_runtime_recovery.py:144: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tasks\base\retry.py:253: in retry
+    if auto.take_screenshot_with_color() is None:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def capture():
+        frames[0] += 1
+        if frames[0] > 4:
+>           raise AssertionError("截图失败不能无限绕过恢复期限")
+E           AssertionError: 截图失败不能无限绕过恢复期限
+
+tests\test_runtime_recovery.py:136: AssertionError
+_________________________ test_mirror_false_battle_recovers_by_landing_not_boolean[home_ocr] __________________________
+
+landing = 'home_ocr'
+
+    @pytest.mark.parametrize("landing", ["home", "home_ocr", "map", "unknown"])
+    def test_mirror_false_battle_recovers_by_landing_not_boolean(landing):
+        path, methods = _mirror_class()
+        operations = []
+        auto = SimpleNamespace(
+            take_screenshot=lambda: object(),
+            find_element=lambda asset, **kw: landing == "home" and asset == "home/window_assets.png",
+            get_ocr_entries=lambda: [("玻璃窗", (20, 800, 100, 850)), ("驾驶席", (200, 800, 280, 850))] if landing in ("home", "home_ocr") else [],
+        )
+        namespace = dict(
+            time=SimpleNamespace(time=lambda: 0),
+            battle=SimpleNamespace(fight=lambda **kw: False), auto=auto,
+            is_on_mirror_map=lambda *a, **kw: landing == "map",
+            back_init_menu=lambda **kw: operations.append("home") or True,
+            restart_game=lambda **kw: operations.append("restart") or True,
+            cannotOperateGameError=RuntimeError,
+            log=SimpleNamespace(warning=lambda *a: None, debug=lambda *a: None),
+        )
+        exec(compile(ast.Module(body=methods, type_ignores=[]), str(path), "exec"), namespace)
+        mirror = SimpleNamespace(
+            avoid_skill_3=False, prioritize_skill_3=False, defense_first_round=False,
+            defense_for_solo_state=None, battle_total_time=0,
+            road_to_mir=lambda: operations.append("enter"),
+        )
+        mirror._time_call = lambda *a, **kw: namespace["_time_call"](mirror, *a, **kw)
+        namespace["_fight"](mirror)
+>       assert operations == {"home": ["enter"], "home_ocr": ["enter"], "map": [], "unknown": ["home", "enter"]}[landing]
+E       AssertionError: assert ['home', 'enter'] == ['enter']
+E         
+E         At index 0 diff: 'home' != 'enter'
+E         Left contains one more item: 'enter'
+E         Use -v to get more diff
+
+tests\test_runtime_recovery.py:183: AssertionError
+=============================================== short test summary info ===============================================
+FAILED tests/test_runtime_recovery.py::test_retry_missing_frames_has_terminal_deadline - AssertionError: 截图失败不能...
+FAILED tests/test_runtime_recovery.py::test_mirror_false_battle_recovers_by_landing_not_boolean[home_ocr] - Assertion...
+2 failed, 13 passed in 2.91s

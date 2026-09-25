@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "Python 自动化层规范入口；实现前确认现有 checklist 与待补齐状态。"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "商店误判、离开循环和寻路失败都必须有明确出口，不能把未知帧当成下一导航页。"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "地图否决、证据不足跳过商店、farthest 降级只记语义原因，不打 OCR 全文。"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "纯识别边界、有界恢复、模板优先与 pytest/Ruff 约束。"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "三处 shop_coins 判定必须共用同一解析，禁止复制布尔表达式。"}

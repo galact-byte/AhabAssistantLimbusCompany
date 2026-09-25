@@ -1,0 +1,29 @@
+{
+  "id": "team-top-upstream-sync",
+  "name": "team-top-upstream-sync",
+  "title": "修复选队归顶误判并融合上游更新",
+  "description": "",
+  "status": "completed",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "galact",
+  "assignee": "galact",
+  "createdAt": "2026-09-25",
+  "completedAt": "2026-09-25",
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [
+    "09-25-team-list-top-boundary",
+    "09-25-upstream-main-integration"
+  ],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {}
+}

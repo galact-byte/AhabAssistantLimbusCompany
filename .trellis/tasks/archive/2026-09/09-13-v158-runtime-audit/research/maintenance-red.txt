@@ -1,0 +1,40 @@
+F                                                                                                                [100%]
+====================================================== FAILURES =======================================================
+_____________________________ test_maintenance_during_recovery_does_not_close_game_again ______________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001F431CE5A70>
+
+    def test_maintenance_during_recovery_does_not_close_game_again(monkeypatch):
+        from test_daily_event_recovery import _BackInitMenuEventAuto
+        module = importlib.import_module("tasks.base.back_init_menu")
+        retry = importlib.import_module("tasks.base.retry")
+        auto = _BackInitMenuEventAuto([[]])
+        operations = []
+        monkeypatch.setattr(module, "auto", auto)
+        monkeypatch.setattr(auto, "find_element", lambda asset, **kw: asset == "base/notification_close_assets.png")
+        monkeypatch.setattr(module, "ensure_simulator_game_started", lambda: False)
+        monkeypatch.setattr(module, "retry", lambda: True)
+        monkeypatch.setattr(retry, "kill_game", lambda: operations.append("close"))
+        assert module.back_init_menu(allow_restart=False) is False
+>       assert operations == []
+E       AssertionError: assert ['close'] == []
+E         
+E         Left contains one more item: 'close'
+E         Use -v to get more diff
+
+tests\test_runtime_recovery.py:209: AssertionError
+------------------------------------------------ Captured stderr call -------------------------------------------------
+[32m[INFO] 2026-09-13 16:59:26,486 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-09-13 16:59:26,547 [RapidOCR] download_file.py:60: File exists and is valid: E:\vsCode\Programs\AhabAssistantLimbusCompany\.venv\Lib\site-packages\rapidocr\models\ch_PP-OCRv4_det_infer.onnx[0m
+[32m[INFO] 2026-09-13 16:59:26,547 [RapidOCR] main.py:55: Using E:\vsCode\Programs\AhabAssistantLimbusCompany\.venv\Lib\site-packages\rapidocr\models\ch_PP-OCRv4_det_infer.onnx[0m
+[32m[INFO] 2026-09-13 16:59:26,724 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-09-13 16:59:26,726 [RapidOCR] download_file.py:60: File exists and is valid: E:\vsCode\Programs\AhabAssistantLimbusCompany\.venv\Lib\site-packages\rapidocr\models\ch_ppocr_mobile_v2.0_cls_infer.onnx[0m
+[32m[INFO] 2026-09-13 16:59:26,733 [RapidOCR] main.py:55: Using E:\vsCode\Programs\AhabAssistantLimbusCompany\.venv\Lib\site-packages\rapidocr\models\ch_ppocr_mobile_v2.0_cls_infer.onnx[0m
+[32m[INFO] 2026-09-13 16:59:26,813 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-09-13 16:59:26,831 [RapidOCR] download_file.py:60: File exists and is valid: E:\vsCode\Programs\AhabAssistantLimbusCompany\.venv\Lib\site-packages\rapidocr\models\ch_PP-OCRv4_rec_infer.onnx[0m
+[32m[INFO] 2026-09-13 16:59:26,831 [RapidOCR] main.py:55: Using E:\vsCode\Programs\AhabAssistantLimbusCompany\.venv\Lib\site-packages\rapidocr\models\ch_PP-OCRv4_rec_infer.onnx[0m
+-------------------------------------------------- Captured log call --------------------------------------------------
+WARNING  AALC:back_init_menu.py:88 ºÏ≤‚µΩŒ¨ª§Ã· æ«“±æ¥Œµ˜”√Ω˚”√ƒ⁄≤ø÷ÿ∆Ù£¨∑µªÿ ß∞‹
+=============================================== short test summary info ===============================================
+FAILED tests/test_runtime_recovery.py::test_maintenance_during_recovery_does_not_close_game_again - AssertionError: a...
+1 failed, 19 deselected in 2.62s

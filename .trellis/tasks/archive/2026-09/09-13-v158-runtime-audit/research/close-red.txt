@@ -1,0 +1,30 @@
+..F                                                                                                              [100%]
+====================================================== FAILURES =======================================================
+________________________________ test_confirmed_window_close_waits_for_running_worker _________________________________
+
+    def test_confirmed_window_close_waits_for_running_worker():
+        actions = []
+        method = load_method('app/my_app.py', 'MainWindow', 'closeEvent', {
+            'cfg': SimpleNamespace(set_value=lambda *a: None),
+            'MessageBoxConfirm': lambda *a: SimpleNamespace(exec=lambda: True),
+            'QTimer': SimpleNamespace(singleShot=lambda ms, callback: actions.append('poll')),
+            'super': lambda: SimpleNamespace(closeEvent=lambda e: actions.append('destroy')),
+        })
+        worker = SimpleNamespace(isRunning=lambda: True, terminate=lambda: actions.append('stop'))
+        ui = SimpleNamespace(x=lambda: 0, y=lambda: 0, isVisible=lambda: True,
+            tr=lambda s: s, window=lambda: None, close=lambda: actions.append('close'),
+            farming_interface=SimpleNamespace(interface_left=SimpleNamespace(my_script=worker)),
+            tools_interface=SimpleNamespace(tools={}))
+        event = SimpleNamespace(ignore=lambda: actions.append('ignore'))
+        method(ui, event)
+>       assert actions == ['stop', 'ignore', 'poll']
+E       AssertionError: assert ['stop', 'destroy'] == ['stop', 'ignore', 'poll']
+E         
+E         At index 1 diff: 'destroy' != 'ignore'
+E         Right contains one more item: 'poll'
+E         Use -v to get more diff
+
+tests\test_stop_ui_lifecycle.py:60: AssertionError
+=============================================== short test summary info ===============================================
+FAILED tests/test_stop_ui_lifecycle.py::test_confirmed_window_close_waits_for_running_worker - AssertionError: assert...
+1 failed, 2 passed in 0.11s

@@ -1,0 +1,90 @@
+.........................................F.F.................................................................... [ 46%]
+................................................................................................................ [ 93%]
+...............                                                                                                  [100%]
+====================================================== FAILURES =======================================================
+_________________________ test_back_init_menu_keeps_waiting_for_event_result_past_loop_budget _________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001517D4387D0>
+
+    def test_back_init_menu_keeps_waiting_for_event_result_past_loop_budget(monkeypatch) -> None:
+        back_init_menu_module = importlib.import_module("tasks.base.back_init_menu")
+        wait_frame = [_entry("判定成功", (500, 200, 700, 240))]
+        fake_auto = _BackInitMenuEventAuto(
+            [
+                *([wait_frame] * 40),
+                [
+                    _entry("判定成功", (500, 200, 700, 240)),
+                    _entry("继续", (680, 800, 760, 840)),
+                ],
+                [],
+            ],
+            home_after_event=True,
+        )
+        clock = iter([0.0, 0.0, *[float(second) for second in range(1, 40)]])
+        _configure_back_init_menu_event_dependencies(monkeypatch, back_init_menu_module, fake_auto)
+        monkeypatch.setattr(back_init_menu_module, "monotonic", lambda: next(clock))
+    
+>       assert back_init_menu_module.back_init_menu(allow_restart=False) is True
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_daily_event_recovery.py:878: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+module\decorator\decorator.py:18: in wrapper
+    result = func(*args, **kw)
+             ^^^^^^^^^^^^^^^^^
+tasks\base\back_init_menu.py:51: in back_init_menu
+    if monotonic() - event_wait_started_at < EVENT_PAGE_WAIT_TIMEOUT:
+       ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+>   monkeypatch.setattr(back_init_menu_module, "monotonic", lambda: next(clock))
+                                                                    ^^^^^^^^^^^
+E   StopIteration
+
+tests\test_daily_event_recovery.py:876: StopIteration
+__________________________ test_back_init_menu_resets_event_wait_clock_after_non_event_frame __________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001517D4698D0>
+
+    def test_back_init_menu_resets_event_wait_clock_after_non_event_frame(monkeypatch) -> None:
+        back_init_menu_module = importlib.import_module("tasks.base.back_init_menu")
+        fake_auto = _BackInitMenuEventAuto(
+            [
+                [_entry("判定成功", (500, 200, 700, 240))],
+                [],
+                [_entry("判定成功", (500, 200, 700, 240))],
+                [
+                    _entry("判定成功", (500, 200, 700, 240)),
+                    _entry("继续", (680, 800, 760, 840)),
+                ],
+                [],
+            ],
+            home_after_event=True,
+            home_at_ocr_call=5,
+        )
+        clock = iter((0.0, 0.0, 61.0, 61.0))
+        _configure_back_init_menu_event_dependencies(monkeypatch, back_init_menu_module, fake_auto)
+        monkeypatch.setattr(back_init_menu_module, "monotonic", lambda: next(clock))
+    
+>       assert back_init_menu_module.back_init_menu(allow_restart=False) is True
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_daily_event_recovery.py:915: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+module\decorator\decorator.py:18: in wrapper
+    result = func(*args, **kw)
+             ^^^^^^^^^^^^^^^^^
+tasks\base\back_init_menu.py:51: in back_init_menu
+    if monotonic() - event_wait_started_at < EVENT_PAGE_WAIT_TIMEOUT:
+       ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+>   monkeypatch.setattr(back_init_menu_module, "monotonic", lambda: next(clock))
+                                                                    ^^^^^^^^^^^
+E   StopIteration
+
+tests\test_daily_event_recovery.py:913: StopIteration
+=============================================== short test summary info ===============================================
+FAILED tests/test_daily_event_recovery.py::test_back_init_menu_keeps_waiting_for_event_result_past_loop_budget - Stop...
+FAILED tests/test_daily_event_recovery.py::test_back_init_menu_resets_event_wait_clock_after_non_event_frame - StopIt...
+2 failed, 237 passed in 11.23s

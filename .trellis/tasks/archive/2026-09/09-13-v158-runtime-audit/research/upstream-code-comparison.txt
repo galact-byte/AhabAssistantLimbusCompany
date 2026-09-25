@@ -1,0 +1,156 @@
+
+### 41299bb module/automation/screenshot.py
+247:                 pass
+248:             from tasks.base.script_task_scheme import init_game
+249: 
+250:             init_game()
+251: 
+252:         except ValueError:
+253:             if screen.handle.isMinimized:
+254:                 screen.handle.set_window_transparent(True)
+
+### 41299bb module/automation/automation.py
+372:             except Exception as e:
+373:                 log.error(f"截图失败:{e}")
+374:             time.sleep(1)
+375:             if time.time() - start_time > 60:
+376:                 log.error("截图超时，尝试重启游戏")
+377:                 import os
+378: 
+379:                 import win32process
+387:                     pass
+388:                 from tasks.base.script_task_scheme import init_game
+389: 
+390:                 init_game()
+391:                 start_time = time.time()
+392: 
+393:     def find_element(
+394:         self,
+
+### 41299bb tasks/mirror/mirror.py
+111: 
+112:     def _fight(self) -> None:
+113:         _, elapsed = self._time_call(
+114:             battle.fight,
+115:             avoid_skill_3=self.avoid_skill_3,
+116:             prioritize_skill_3=self.prioritize_skill_3,
+117:             defense_first_round=self.defense_first_round,
+118:             defense_for_solo_state=self.defense_for_solo_state,
+216:         back_menu_count = 0
+217:         # 未到达奖励页不会停止
+218:         while True:
+219:             if main_loop_count >= 50:
+220:                 auto.model = "clam"  # 防止函数内修改后未还原
+221:             # 自动截图
+222:             if auto.take_screenshot() is None:
+223:                 continue
+475:             main_loop_count -= 1
+476:             if main_loop_count % 10 == 0:
+477:                 log.debug(f"镜牢道中识别次数剩余{main_loop_count}次")
+478:             if main_loop_count < 75:
+479:                 auto.model = "normal"
+480:                 auto.mouse_to_blank(move_back=False)
+481:                 log.debug("识别模式切换到正常模式")
+482:             if main_loop_count < 15:
+
+### 41299bb tasks/battle/battle.py
+248:             if infinite_battle is False and check_times(start_time, timeout=900 + 300 * combat_count, logs=False):
+249:                 from tasks.base.back_init_menu import back_init_menu
+250: 
+251:                 back_init_menu()
+252:                 return False
+253: 
+254:             total_count += 1
+255: 
+
+### 41299bb tasks/event_page.py
+NOT PRESENT
+
+### HEAD module/automation/screenshot.py
+239:             from module.game_and_screen import game_process
+240:             from tasks.base.script_task_scheme import init_game
+241: 
+242:             game_process.close_game()
+243:             init_game()
+244: 
+245:         except ValueError:
+246:             if screen.handle.isMinimized:
+247:                 screen.handle.set_window_transparent(True)
+
+### HEAD module/automation/automation.py
+379:             except Exception as e:
+380:                 log.error(f"截图失败:{e}")
+381:             time.sleep(1)
+382:             if time.time() - start_time > 60:
+383:                 log.error("截图超时，尝试重启游戏")
+384:                 from module.game_and_screen import game_process
+385:                 from tasks.base.script_task_scheme import init_game
+386: 
+387:                 game_process.close_game()
+388:                 init_game()
+389:                 start_time = time.time()
+390: 
+391:     def find_element(
+392:         self,
+
+### HEAD tasks/mirror/mirror.py
+113: 
+114:     def _fight(self) -> None:
+115:         _, elapsed = self._time_call(
+116:             battle.fight,
+117:             avoid_skill_3=self.avoid_skill_3,
+118:             prioritize_skill_3=self.prioritize_skill_3,
+119:             defense_first_round=self.defense_first_round,
+120:             defense_for_solo_state=self.defense_for_solo_state,
+218:         back_menu_count = 0
+219:         # 未到达奖励页不会停止
+220:         while True:
+221:             if main_loop_count >= 50:
+222:                 auto.model = "clam"  # 防止函数内修改后未还原
+223:             # 自动截图
+224:             if auto.take_screenshot() is None:
+225:                 continue
+480:             main_loop_count -= 1
+481:             if main_loop_count % 10 == 0:
+482:                 log.debug(f"镜牢道中识别次数剩余{main_loop_count}次")
+483:             if main_loop_count < 75:
+484:                 auto.model = "normal"
+485:                 auto.mouse_to_blank(move_back=False)
+486:                 log.debug("识别模式切换到正常模式")
+487:             if main_loop_count < 15:
+
+### HEAD tasks/battle/battle.py
+16: from tasks import sins
+17: from tasks.base.retry import handle_server_error_dialog, retry
+18: from tasks.event import event_handling
+19: from tasks.event.event_handling import resolve_event_page
+20: from tasks.event_page import (
+21:     find_event_choice_slots,
+22:     is_event_choice_page,
+23:     is_first_event_choice_disabled,
+272:             if infinite_battle is False and check_times(start_time, timeout=900 + 300 * combat_count, logs=False):
+273:                 from tasks.base.back_init_menu import back_init_menu
+274: 
+275:                 back_init_menu()
+276:                 return False
+277: 
+278:             total_count += 1
+279: 
+513:                     continue
+514:                 if auto.click_element("event/skip_assets.png", times=6):
+515:                     continue
+516:                 event_resolution = resolve_event_page(auto.get_ocr_entries())
+517:                 if event_resolution is not None:
+518:                     if event_resolution.state == "advance" and event_resolution.position is not None:
+519:                         auto.mouse_click(*event_resolution.position)
+520:                         log.debug(f"OCR 推进日常事件页: {event_resolution.reason}")
+
+### HEAD tasks/event_page.py
+131:     return saturated_ratio < EVENT_CHOICE_LOW_SATURATION_RATIO_THRESHOLD
+132: 
+133: 
+134: def resolve_event_page(entries: list[OcrEntry]) -> EventPageResolution | None:
+135:     """仅从 OCR 条目判定事件推进、等待或非事件页。"""
+136:     normalized_entries = _normalize_entries(entries)
+137:     result_visible = any("判定成功" in text or "判定失败" in text for text, _ in normalized_entries)
+138: 

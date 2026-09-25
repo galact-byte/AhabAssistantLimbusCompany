@@ -1,0 +1,81 @@
+FF                                                                                                               [100%]
+====================================================== FAILURES =======================================================
+______________________________ test_mirror_reentry_exhaustion_is_explicit_failure[False] ______________________________
+
+missing_frame = False
+
+    @pytest.mark.parametrize("missing_frame", [False, True])
+    def test_mirror_reentry_exhaustion_is_explicit_failure(missing_frame):
+        path = Path(__file__).resolve().parents[1] / "tasks/mirror/mirror.py"
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        method = next(n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) and n.name == "road_to_mir")
+        frames = []
+        def capture():
+            frames.append(1)
+            if len(frames) > 40:
+                raise AssertionError("重进镜牢必须有界")
+            return None if missing_frame else object()
+        auto = SimpleNamespace(
+            take_screenshot=capture, mouse_to_blank=lambda: None,
+            find_element=lambda *a, **kw: False, click_element=lambda *a, **kw: False,
+            find_text_element=lambda *a, **kw: True,
+        )
+        namespace = dict(auto=auto, retry=lambda: True, sleep=lambda _: None,
+                         inspect_mirror_shop_presence=lambda _: SimpleNamespace(state="unknown"),
+                         is_on_mirror_map=lambda _: False,
+                         ImageUtils=SimpleNamespace(get_bbox=lambda _: (0, 0, 10, 10), load_image=lambda _: None),
+                         log=SimpleNamespace(error=lambda _: None), back_init_menu=lambda: False)
+        exec(compile(ast.Module(body=[method], type_ignores=[]), str(path), "exec"), namespace)
+>       assert namespace["road_to_mir"](SimpleNamespace()) is False
+E       assert None is False
+E        +  where None = <function road_to_mir at 0x00000237063E5A80>(namespace(first_battle=True))
+E        +    where namespace(first_battle=True) = SimpleNamespace()
+
+tests\test_runtime_recovery.py:190: AssertionError
+______________________________ test_mirror_reentry_exhaustion_is_explicit_failure[True] _______________________________
+
+missing_frame = True
+
+    @pytest.mark.parametrize("missing_frame", [False, True])
+    def test_mirror_reentry_exhaustion_is_explicit_failure(missing_frame):
+        path = Path(__file__).resolve().parents[1] / "tasks/mirror/mirror.py"
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        method = next(n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) and n.name == "road_to_mir")
+        frames = []
+        def capture():
+            frames.append(1)
+            if len(frames) > 40:
+                raise AssertionError("重进镜牢必须有界")
+            return None if missing_frame else object()
+        auto = SimpleNamespace(
+            take_screenshot=capture, mouse_to_blank=lambda: None,
+            find_element=lambda *a, **kw: False, click_element=lambda *a, **kw: False,
+            find_text_element=lambda *a, **kw: True,
+        )
+        namespace = dict(auto=auto, retry=lambda: True, sleep=lambda _: None,
+                         inspect_mirror_shop_presence=lambda _: SimpleNamespace(state="unknown"),
+                         is_on_mirror_map=lambda _: False,
+                         ImageUtils=SimpleNamespace(get_bbox=lambda _: (0, 0, 10, 10), load_image=lambda _: None),
+                         log=SimpleNamespace(error=lambda _: None), back_init_menu=lambda: False)
+        exec(compile(ast.Module(body=[method], type_ignores=[]), str(path), "exec"), namespace)
+>       assert namespace["road_to_mir"](SimpleNamespace()) is False
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_runtime_recovery.py:190: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tasks\mirror\mirror.py:155: in road_to_mir
+    if auto.take_screenshot() is None:
+       ^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def capture():
+        frames.append(1)
+        if len(frames) > 40:
+>           raise AssertionError("重进镜牢必须有界")
+E           AssertionError: 重进镜牢必须有界
+
+tests\test_runtime_recovery.py:177: AssertionError
+=============================================== short test summary info ===============================================
+FAILED tests/test_runtime_recovery.py::test_mirror_reentry_exhaustion_is_explicit_failure[False] - assert None is False
+FAILED tests/test_runtime_recovery.py::test_mirror_reentry_exhaustion_is_explicit_failure[True] - AssertionError: 重...
+2 failed, 16 deselected in 0.49s

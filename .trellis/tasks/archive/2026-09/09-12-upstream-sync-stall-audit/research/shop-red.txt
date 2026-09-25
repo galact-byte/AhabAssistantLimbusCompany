@@ -1,0 +1,112 @@
+FF                                                                                                               [100%]
+====================================================== FAILURES =======================================================
+______________________________________ test_shop_leave_cannot_spin_forever[True] ______________________________________
+
+screenshot_available = True
+
+    @pytest.mark.parametrize("screenshot_available", [True, False])
+    def test_shop_leave_cannot_spin_forever(screenshot_available):
+        source = Path(__file__).resolve().parents[1] / "tasks/mirror/in_shop.py"
+        tree = ast.parse(source.read_text(encoding="utf-8"))
+        method = next(n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) and n.name == "in_shop")
+        frames = 0
+        recovered = []
+    
+        def screenshot():
+            nonlocal frames
+            frames += 1
+            assert frames <= 100, "离店无进展超过100帧，恢复预算被绕过"
+            return object() if frames == 1 or screenshot_available else None
+    
+        auto = SimpleNamespace(
+            model="clam", take_screenshot=screenshot,
+            mouse_click_blank=lambda **_: None,
+            click_element=lambda target: target.endswith("/leave_assets.png"),
+        )
+        namespace = {
+            "auto": auto, "sleep": lambda *_: None, "retry": lambda: None,
+            "inspect_mirror_shop_presence": lambda _: SimpleNamespace(state="shop"),
+            "should_end_shop_leave": lambda _: False,
+            "back_init_menu": lambda: recovered.append(True),
+            "log": SimpleNamespace(info=lambda *_: None, debug=lambda *_: None, error=lambda *_: None),
+        }
+        exec(compile(ast.Module(body=[method], type_ignores=[]), str(source), "exec"), namespace)
+        shop = SimpleNamespace(
+            ignore_shop=[False] * 5, skill_replacement=False,
+            do_not_heal=True, do_not_sell=True, do_not_buy=True,
+            do_not_fuse=True, do_not_enhance=True, RestartGame=RuntimeError,
+        )
+>       namespace["in_shop"](shop, 1)
+
+tests\test_shop_leave_budget.py:41: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tasks\mirror\in_shop.py:1419: in in_shop
+    if auto.take_screenshot() is None:
+       ^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def screenshot():
+        nonlocal frames
+        frames += 1
+>       assert frames <= 100, "离店无进展超过100帧，恢复预算被绕过"
+E       AssertionError: 离店无进展超过100帧，恢复预算被绕过
+E       assert 101 <= 100
+
+tests\test_shop_leave_budget.py:20: AssertionError
+_____________________________________ test_shop_leave_cannot_spin_forever[False] ______________________________________
+
+screenshot_available = False
+
+    @pytest.mark.parametrize("screenshot_available", [True, False])
+    def test_shop_leave_cannot_spin_forever(screenshot_available):
+        source = Path(__file__).resolve().parents[1] / "tasks/mirror/in_shop.py"
+        tree = ast.parse(source.read_text(encoding="utf-8"))
+        method = next(n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) and n.name == "in_shop")
+        frames = 0
+        recovered = []
+    
+        def screenshot():
+            nonlocal frames
+            frames += 1
+            assert frames <= 100, "离店无进展超过100帧，恢复预算被绕过"
+            return object() if frames == 1 or screenshot_available else None
+    
+        auto = SimpleNamespace(
+            model="clam", take_screenshot=screenshot,
+            mouse_click_blank=lambda **_: None,
+            click_element=lambda target: target.endswith("/leave_assets.png"),
+        )
+        namespace = {
+            "auto": auto, "sleep": lambda *_: None, "retry": lambda: None,
+            "inspect_mirror_shop_presence": lambda _: SimpleNamespace(state="shop"),
+            "should_end_shop_leave": lambda _: False,
+            "back_init_menu": lambda: recovered.append(True),
+            "log": SimpleNamespace(info=lambda *_: None, debug=lambda *_: None, error=lambda *_: None),
+        }
+        exec(compile(ast.Module(body=[method], type_ignores=[]), str(source), "exec"), namespace)
+        shop = SimpleNamespace(
+            ignore_shop=[False] * 5, skill_replacement=False,
+            do_not_heal=True, do_not_sell=True, do_not_buy=True,
+            do_not_fuse=True, do_not_enhance=True, RestartGame=RuntimeError,
+        )
+>       namespace["in_shop"](shop, 1)
+
+tests\test_shop_leave_budget.py:41: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tasks\mirror\in_shop.py:1419: in in_shop
+    if auto.take_screenshot() is None:
+       ^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def screenshot():
+        nonlocal frames
+        frames += 1
+>       assert frames <= 100, "离店无进展超过100帧，恢复预算被绕过"
+E       AssertionError: 离店无进展超过100帧，恢复预算被绕过
+E       assert 101 <= 100
+
+tests\test_shop_leave_budget.py:20: AssertionError
+=============================================== short test summary info ===============================================
+FAILED tests/test_shop_leave_budget.py::test_shop_leave_cannot_spin_forever[True] - AssertionError: 离店无进展超过100...
+FAILED tests/test_shop_leave_budget.py::test_shop_leave_cannot_spin_forever[False] - AssertionError: 离店无进展超过10...
+2 failed in 0.59s

@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "核对纯解析可单测、失败出口明确、Ruff/pytest 范围，以及禁止把未知页当导航。"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "核对商店/地图/unknown 与 farthest 降级的 None/True/False 语义是否被吞掉。"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "核对地图否决与寻路降级日志级别，禁止记录完整 OCR 或截图。"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "核对三处商店判定和离开循环是否复用同一契约。"}
