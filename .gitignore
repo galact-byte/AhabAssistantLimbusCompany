@@ -46,3 +46,7 @@ issue-evidence/
 .trellis/tasks/09-12-upstream-sync-stall-audit/research/evidence/
 .trellis/tasks/09-12-upstream-sync-stall-audit/research/log-*.txt
 .trellis/tasks/09-12-upstream-sync-stall-audit/research/log-*.json
+# 09-12 归档后原始日志仍仅保留本地
+.trellis/tasks/archive/2026-09/09-12-upstream-sync-stall-audit/research/evidence/
+.trellis/tasks/archive/2026-09/09-12-upstream-sync-stall-audit/research/log-*.txt
+.trellis/tasks/archive/2026-09/09-12-upstream-sync-stall-audit/research/log-*.json

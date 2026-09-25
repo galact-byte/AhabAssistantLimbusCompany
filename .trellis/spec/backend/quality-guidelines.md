@@ -87,6 +87,7 @@ Keep a named local retry limit (`EVENT_CHOICE_MAX_RETRY_ATTEMPTS`) for a stable 
 ### 3. 契约
 前后台Windows滚轮定点到编队列表；WM_MOUSEWHEEL坐标为客户端点转换到屏幕坐标。保留交互门、暂停检查与finally鼠标恢复。window_move不支持则False，不能回退拖动；模拟器保留原专用触摸输入。
 按顺序须观察归顶并下滚/回顶验证输入生效，再按页面重叠计数到目标；按名称当前页明确命中可直接选。禁止为了选第二项遍历全部40槽，40是编号上界而非实际槽数前提。只检查经过页面的歧义。
+首行的 OCR 上沿须严格低于标题下沿加 `6 * scale`；2026-09-25 的两张 900p 失败帧均为标题下沿 371、首项上沿 377、`scale=0.625`。旧 `12 * scale` 要求间距大于 7.5px，会丢弃真实首项并把第二项当成第一项。仍须排除与标题重叠的行，不能把“归顶”当作滚轮在实机生效的证据。
 
 ### 4. 错误矩阵
 截图/识别不可用最多3次；单阶段滚动最多100次；点击核验最多3次。静止但无法验证输入、缺行、重名、页间无重叠或标题不一致→False并保存可用失败帧；镜牢与日常不得继续确认/战斗。取消BaseException不能被吞掉。
@@ -95,11 +96,38 @@ Keep a named local retry limit (`EVENT_CHOICE_MAX_RETRY_ATTEMPTS`) for a stable 
 正常：剧情关卡、编队#3，按顺序2选#3。常规：名称编号2在#20后，滚动到实际条目。错误：用列表中出现#2作为选中证据；必须使用独立顶部当前编队标题。
 
 ### 6. 回归
-`test_team_safe_input.py`禁止左键按住、验证wheel坐标/恢复/交互门；`test_team_list_parser.py`覆盖分区、缺行、标题；`test_team_visual_selection.py`覆盖错点纠正、40项边界、多轮、短列表、按需扫描、滚轮停滞和镜牢失败不确认。单元测试不代表1600×900实机滚轮生效。
+`test_team_safe_input.py`禁止左键按住、验证wheel坐标/恢复/交互门；`test_team_list_parser.py`覆盖分区、缺行、标题，以及两张 900p 失败帧的首行坐标和标题重叠反例；`test_team_visual_selection.py`覆盖错点纠正、40项边界、多轮、短列表、按需扫描、滚轮停滞和镜牢失败不确认。单元测试不代表1600×900实机滚轮生效。
 
 ### 7. 错误与正确
 错误：按旧拖动像素推算滚轮后的固定点击坐标，点击后立即报成功。
 正确：读取本帧条目位置，点击后重截并核验顶部标题；普通地图滚轮不受编队专项变更影响。
+
+## 特征匹配输入与资源缓存
+
+### 1. 范围与触发
+上游 `main@ddc2204` 为 `Automation.find_feature_element()` 添加空输入防护和缺模板缓存。资源可能在运行时同步，不能把一次缺失永久记住。
+
+### 2. 接口
+`find_feature_element(target: str, ...) -> tuple[int, int] | None`；`clear_img_cache() -> None`；`ResourceSyncService._refresh_runtime_image_cache() -> None`。
+
+### 3. 契约
+模板缺失/非数组/空数组、截图 None/空数组、裁剪后空数组均返回 None，不调用 `ImageUtils.feature_matching`。缺模板的路径可暂存于 `_unavailable_feature_templates`；资源同步成功后调用 `auto.clear_img_cache()`，同时清除普通图片缓存和该路径集合；有效模板保持正常匹配。
+
+### 4. 错误矩阵
+| 情况 | 结果 |
+| --- | --- |
+| 模板缺失、截图缺失、裁剪为空 | None，不进入特征匹配 |
+| 缺模板后再次查询（未同步） | None，避免重复读盘 |
+| 资源同步后模板已存在 | 清缓存后重载并匹配 |
+
+### 5. 案例
+正常：同步后清缓存，原缺失模板可匹配；基础：普通模板正常返回坐标；错误：先前模板不存在，资源已同步但仍从旧集合直接返回 None。
+
+### 6. 回归
+`tests/test_feature_matching_input_guards.py` 验证三类输入不进入匹配、清除两类缓存、资源从缺失到可用后可再次匹配；整库测试覆盖本地彩色帧和恢复路径。不能用离线测试声称季节领取实机成功。
+
+### 7. 错误与正确
+错误：只清 `img_cache`，保留 `_unavailable_feature_templates`；正确：`clear_img_cache()` 一并清除两个缓存，由资源同步完成路径调用。
 
 ## Forbidden patterns
 
