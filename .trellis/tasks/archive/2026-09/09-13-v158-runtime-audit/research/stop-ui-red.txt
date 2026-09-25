@@ -1,0 +1,49 @@
+FF                                                                                                               [100%]
+====================================================== FAILURES =======================================================
+______________________________ test_stop_button_keeps_settings_locked_until_worker_exits ______________________________
+
+    def test_stop_button_keeps_settings_locked_until_worker_exits():
+        actions = []
+        method = load_method('app/farming_interface.py', 'FarmingInterfaceLeft', 'start_and_stop_tasks', {
+            'cfg': SimpleNamespace(set_reduce_miscontact=True, simulator=False),
+            'screen': SimpleNamespace(reset_win=lambda **k: actions.append('reset-window')),
+            'auto': SimpleNamespace(clear_img_cache=lambda: actions.append('clear')),
+            'mediator': SimpleNamespace(refresh_teams_order=SimpleNamespace(emit=lambda: None),
+                                       mirror_bar_kill_signal=SimpleNamespace(emit=lambda: None)),
+        })
+        button = SimpleNamespace(get_text=lambda: 'S t o p !', set_text=lambda s: actions.append(s),
+                                 setEnabled=lambda value: actions.append(('enabled', value)))
+        ui = SimpleNamespace(link_start_button=button, my_script=SimpleNamespace(isRunning=lambda: True),
+            _enable_setting=lambda p: actions.append('unlock'), parent=lambda: None,
+            reset_pause_resume_button=lambda: None, stop_script=lambda: actions.append('request'))
+        method(ui)
+>       assert actions == ['request']
+E       AssertionError: assert ['reset-windo...est', 'clear'] == ['request']
+E         
+E         At index 0 diff: 'reset-window' != 'request'
+E         Left contains 4 more items, first extra item: 'Link Start!'
+E         Use -v to get more diff
+
+tests\test_stop_ui_lifecycle.py:30: AssertionError
+_______________________________ test_completion_exit_requests_window_close_not_sys_exit _______________________________
+
+    def test_completion_exit_requests_window_close_not_sys_exit():
+        actions = []
+        method = load_method('app/farming_interface.py', 'FarmingInterfaceLeft', 'stop_AALC', {
+            'log': SimpleNamespace(debug=lambda *a: None),
+            'sys': SimpleNamespace(exit=lambda code: actions.append('sys-exit')),
+        })
+        ui = SimpleNamespace(after_completion_selector=SimpleNamespace(_hide_editor=lambda: None),
+                             window=lambda: SimpleNamespace(close=lambda: actions.append('close')))
+        method(ui)
+>       assert actions == ['close']
+E       AssertionError: assert ['sys-exit'] == ['close']
+E         
+E         At index 0 diff: 'sys-exit' != 'close'
+E         Use -v to get more diff
+
+tests\test_stop_ui_lifecycle.py:42: AssertionError
+=============================================== short test summary info ===============================================
+FAILED tests/test_stop_ui_lifecycle.py::test_stop_button_keeps_settings_locked_until_worker_exits - AssertionError: a...
+FAILED tests/test_stop_ui_lifecycle.py::test_completion_exit_requests_window_close_not_sys_exit - AssertionError: ass...
+2 failed in 0.10s

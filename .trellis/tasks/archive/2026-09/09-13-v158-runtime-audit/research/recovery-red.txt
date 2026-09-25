@@ -1,0 +1,189 @@
+FFFFF.F                                                                                                          [100%]
+====================================================== FAILURES =======================================================
+_________________________________ test_background_window_missing_does_not_launch_game _________________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001FD02CB55B0>
+
+    def test_background_window_missing_does_not_launch_game(monkeypatch):
+        module = importlib.import_module("module.automation.screenshot")
+        game = importlib.import_module("module.game_and_screen")
+        script = importlib.import_module("tasks.base.script_task_scheme")
+        operations = []
+        monkeypatch.setattr(module, "screen", SimpleNamespace(handle=SimpleNamespace(hwnd=0)))
+        monkeypatch.setattr(game.game_process, "close_game", lambda: operations.append("close"))
+        monkeypatch.setattr(script, "init_game", lambda: operations.append("launch"))
+        assert module.ScreenShot.background_screenshot() is None
+>       assert operations == []
+E       AssertionError: assert ['close', 'launch'] == []
+E         
+E         Left contains 2 more items, first extra item: 'close'
+E         Use -v to get more diff
+
+tests\test_runtime_recovery.py:19: AssertionError
+------------------------------------------------ Captured stderr call -------------------------------------------------
+[32m[INFO] 2026-09-13 16:38:09,103 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-09-13 16:38:09,135 [RapidOCR] download_file.py:60: File exists and is valid: E:\vsCode\Programs\AhabAssistantLimbusCompany\.venv\Lib\site-packages\rapidocr\models\ch_PP-OCRv4_det_infer.onnx[0m
+[32m[INFO] 2026-09-13 16:38:09,135 [RapidOCR] main.py:55: Using E:\vsCode\Programs\AhabAssistantLimbusCompany\.venv\Lib\site-packages\rapidocr\models\ch_PP-OCRv4_det_infer.onnx[0m
+[32m[INFO] 2026-09-13 16:38:09,222 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-09-13 16:38:09,223 [RapidOCR] download_file.py:60: File exists and is valid: E:\vsCode\Programs\AhabAssistantLimbusCompany\.venv\Lib\site-packages\rapidocr\models\ch_ppocr_mobile_v2.0_cls_infer.onnx[0m
+[32m[INFO] 2026-09-13 16:38:09,224 [RapidOCR] main.py:55: Using E:\vsCode\Programs\AhabAssistantLimbusCompany\.venv\Lib\site-packages\rapidocr\models\ch_ppocr_mobile_v2.0_cls_infer.onnx[0m
+[32m[INFO] 2026-09-13 16:38:09,262 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-09-13 16:38:09,271 [RapidOCR] download_file.py:60: File exists and is valid: E:\vsCode\Programs\AhabAssistantLimbusCompany\.venv\Lib\site-packages\rapidocr\models\ch_PP-OCRv4_rec_infer.onnx[0m
+[32m[INFO] 2026-09-13 16:38:09,271 [RapidOCR] main.py:55: Using E:\vsCode\Programs\AhabAssistantLimbusCompany\.venv\Lib\site-packages\rapidocr\models\ch_PP-OCRv4_rec_infer.onnx[0m
+-------------------------------------------------- Captured log call --------------------------------------------------
+ERROR    AALC:screenshot.py:238 ∫ÛÃ®ΩÿÕº±®¥Ì: Œ¥’“µΩ”Œœ∑¥∞ø⁄æ‰±˙£¨Œﬁ∑®ΩÿÕº£¨≥¢ ‘÷ÿ∆Ù”Œœ∑
+____________________________ test_restart_owns_close_launch_and_home_without_nested_launch ____________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001FD02CB4FC0>
+
+    def test_restart_owns_close_launch_and_home_without_nested_launch(monkeypatch):
+        retry = importlib.import_module("tasks.base.retry")
+        script = importlib.import_module("tasks.base.script_task_scheme")
+        home = importlib.import_module("tasks.base.back_init_menu")
+        operations = []
+        nested_results = []
+        monkeypatch.setattr(retry, "kill_game", lambda: operations.append("close"))
+        def launch():
+            operations.append("launch")
+            if len(operations) < 5:
+                nested_results.append(retry.restart_game(close_first=True))
+        monkeypatch.setattr(script, "init_game", launch)
+        monkeypatch.setattr(home, "back_init_menu", lambda **kw: operations.append(("home", kw)) or True)
+        monkeypatch.setattr(retry, "sleep", lambda _: None)
+>       assert retry.restart_game(close_first=True) is True
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: restart_game() got an unexpected keyword argument 'close_first'
+
+tests\test_runtime_recovery.py:36: TypeError
+____________________________ test_failed_restart_releases_owner_for_later_attempt[launch] _____________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001FD26BD6330>, failure = 'launch'
+
+    @pytest.mark.parametrize("failure", ["launch", "home"])
+    def test_failed_restart_releases_owner_for_later_attempt(monkeypatch, failure):
+        retry = importlib.import_module("tasks.base.retry")
+        script = importlib.import_module("tasks.base.script_task_scheme")
+        home = importlib.import_module("tasks.base.back_init_menu")
+        monkeypatch.setattr(retry, "kill_game", lambda: None)
+        monkeypatch.setattr(retry, "sleep", lambda _: None)
+        def launch():
+            if failure == "launch":
+                raise RuntimeError("launch failed")
+        monkeypatch.setattr(script, "init_game", launch)
+        monkeypatch.setattr(home, "back_init_menu", lambda **kw: False)
+        with pytest.raises(Exception):
+            retry.restart_game(close_first=True)
+        monkeypatch.setattr(script, "init_game", lambda: None)
+        monkeypatch.setattr(home, "back_init_menu", lambda **kw: True)
+>       assert retry.restart_game(close_first=True) is True
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: restart_game() got an unexpected keyword argument 'close_first'
+
+tests\test_runtime_recovery.py:57: TypeError
+_____________________________ test_failed_restart_releases_owner_for_later_attempt[home] ______________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001FD26CC4AF0>, failure = 'home'
+
+    @pytest.mark.parametrize("failure", ["launch", "home"])
+    def test_failed_restart_releases_owner_for_later_attempt(monkeypatch, failure):
+        retry = importlib.import_module("tasks.base.retry")
+        script = importlib.import_module("tasks.base.script_task_scheme")
+        home = importlib.import_module("tasks.base.back_init_menu")
+        monkeypatch.setattr(retry, "kill_game", lambda: None)
+        monkeypatch.setattr(retry, "sleep", lambda _: None)
+        def launch():
+            if failure == "launch":
+                raise RuntimeError("launch failed")
+        monkeypatch.setattr(script, "init_game", launch)
+        monkeypatch.setattr(home, "back_init_menu", lambda **kw: False)
+        with pytest.raises(Exception):
+            retry.restart_game(close_first=True)
+        monkeypatch.setattr(script, "init_game", lambda: None)
+        monkeypatch.setattr(home, "back_init_menu", lambda **kw: True)
+>       assert retry.restart_game(close_first=True) is True
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: restart_game() got an unexpected keyword argument 'close_first'
+
+tests\test_runtime_recovery.py:57: TypeError
+___________________________ test_mirror_false_battle_recovers_by_landing_not_boolean[home] ____________________________
+
+landing = 'home'
+
+    @pytest.mark.parametrize("landing", ["home", "map", "unknown"])
+    def test_mirror_false_battle_recovers_by_landing_not_boolean(landing):
+        path, methods = _mirror_class()
+        operations = []
+        auto = SimpleNamespace(
+            take_screenshot=lambda: object(),
+            find_element=lambda asset, **kw: landing == "home" and asset == "home/window_assets.png",
+            get_ocr_entries=lambda: [("≤£¡ß¥∞", (20, 800, 100, 850)), ("º› ªœØ", (200, 800, 280, 850))] if landing == "home" else [],
+        )
+        namespace = dict(
+            time=SimpleNamespace(time=lambda: 0),
+            battle=SimpleNamespace(fight=lambda **kw: False), auto=auto,
+            is_on_mirror_map=lambda *a, **kw: landing == "map",
+            back_init_menu=lambda **kw: operations.append("home") or True,
+            restart_game=lambda **kw: operations.append("restart") or True,
+            cannotOperateGameError=RuntimeError,
+            log=SimpleNamespace(warning=lambda *a: None, debug=lambda *a: None),
+        )
+        exec(compile(ast.Module(body=methods, type_ignores=[]), str(path), "exec"), namespace)
+        mirror = SimpleNamespace(
+            avoid_skill_3=False, prioritize_skill_3=False, defense_first_round=False,
+            defense_for_solo_state=None, battle_total_time=0,
+            road_to_mir=lambda: operations.append("enter"),
+        )
+        mirror._time_call = lambda *a, **kw: namespace["_time_call"](mirror, *a, **kw)
+        namespace["_fight"](mirror)
+>       assert operations == {"home": ["enter"], "map": [], "unknown": ["home", "enter"]}[landing]
+E       AssertionError: assert [] == ['enter']
+E         
+E         Right contains one more item: 'enter'
+E         Use -v to get more diff
+
+tests\test_runtime_recovery.py:95: AssertionError
+__________________________ test_mirror_false_battle_recovers_by_landing_not_boolean[unknown] __________________________
+
+landing = 'unknown'
+
+    @pytest.mark.parametrize("landing", ["home", "map", "unknown"])
+    def test_mirror_false_battle_recovers_by_landing_not_boolean(landing):
+        path, methods = _mirror_class()
+        operations = []
+        auto = SimpleNamespace(
+            take_screenshot=lambda: object(),
+            find_element=lambda asset, **kw: landing == "home" and asset == "home/window_assets.png",
+            get_ocr_entries=lambda: [("≤£¡ß¥∞", (20, 800, 100, 850)), ("º› ªœØ", (200, 800, 280, 850))] if landing == "home" else [],
+        )
+        namespace = dict(
+            time=SimpleNamespace(time=lambda: 0),
+            battle=SimpleNamespace(fight=lambda **kw: False), auto=auto,
+            is_on_mirror_map=lambda *a, **kw: landing == "map",
+            back_init_menu=lambda **kw: operations.append("home") or True,
+            restart_game=lambda **kw: operations.append("restart") or True,
+            cannotOperateGameError=RuntimeError,
+            log=SimpleNamespace(warning=lambda *a: None, debug=lambda *a: None),
+        )
+        exec(compile(ast.Module(body=methods, type_ignores=[]), str(path), "exec"), namespace)
+        mirror = SimpleNamespace(
+            avoid_skill_3=False, prioritize_skill_3=False, defense_first_round=False,
+            defense_for_solo_state=None, battle_total_time=0,
+            road_to_mir=lambda: operations.append("enter"),
+        )
+        mirror._time_call = lambda *a, **kw: namespace["_time_call"](mirror, *a, **kw)
+        namespace["_fight"](mirror)
+>       assert operations == {"home": ["enter"], "map": [], "unknown": ["home", "enter"]}[landing]
+E       AssertionError: assert [] == ['home', 'enter']
+E         
+E         Right contains 2 more items, first extra item: 'home'
+E         Use -v to get more diff
+
+tests\test_runtime_recovery.py:95: AssertionError
+=============================================== short test summary info ===============================================
+FAILED tests/test_runtime_recovery.py::test_background_window_missing_does_not_launch_game - AssertionError: assert [...
+FAILED tests/test_runtime_recovery.py::test_restart_owns_close_launch_and_home_without_nested_launch - TypeError: res...
+FAILED tests/test_runtime_recovery.py::test_failed_restart_releases_owner_for_later_attempt[launch] - TypeError: rest...
+FAILED tests/test_runtime_recovery.py::test_failed_restart_releases_owner_for_later_attempt[home] - TypeError: restar...
+FAILED tests/test_runtime_recovery.py::test_mirror_false_battle_recovers_by_landing_not_boolean[home] - AssertionErro...
+FAILED tests/test_runtime_recovery.py::test_mirror_false_battle_recovers_by_landing_not_boolean[unknown] - AssertionE...
+6 failed, 1 passed in 1.50s

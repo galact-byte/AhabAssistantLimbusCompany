@@ -1,0 +1,56 @@
+F                                                                                                                [100%]
+====================================================== FAILURES =======================================================
+_______________________________ test_return_home_exhaustion_delegates_one_owned_restart _______________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000014A64515A70>
+
+    def test_return_home_exhaustion_delegates_one_owned_restart(monkeypatch):
+        from test_daily_event_recovery import _BackInitMenuEventAuto
+        module = importlib.import_module("tasks.base.back_init_menu")
+        retry = importlib.import_module("tasks.base.retry")
+        operations = []
+        monkeypatch.setattr(module, "auto", _BackInitMenuEventAuto([[]]))
+        monkeypatch.setattr(module, "LOOP_COUNT", 0)
+        monkeypatch.setattr(retry, "kill_game", lambda: operations.append("unowned close"))
+        def restart(**kwargs):
+            operations.append(kwargs)
+            return True
+        monkeypatch.setattr(retry, "restart_game", restart)
+        # æ… µœ÷∫ˆ¬‘∑µªÿ÷µ≤¢÷ÿΩ¯—≠ª∑£ªµ⁄∂˛¥Œµ˜”√º¥÷’÷π≤‚ ‘∑¿÷πŒﬁœﬁ—≠ª∑°£
+        def sleep(_):
+            raise AssertionError("»∑»œ÷˜“≥∫Û≤ª”¶÷ÿ◊ﬂª÷∏¥—≠ª∑")
+        monkeypatch.setattr(module, "sleep", sleep)
+>       assert module.back_init_menu() is True
+               ^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_runtime_recovery.py:164: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+module\decorator\decorator.py:18: in wrapper
+    result = func(*args, **kw)
+             ^^^^^^^^^^^^^^^^^
+tasks\base\back_init_menu.py:38: in back_init_menu
+    sleep(1)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+_ = 1
+
+    def sleep(_):
+>       raise AssertionError("»∑»œ÷˜“≥∫Û≤ª”¶÷ÿ◊ﬂª÷∏¥—≠ª∑")
+E       AssertionError: »∑»œ÷˜“≥∫Û≤ª”¶÷ÿ◊ﬂª÷∏¥—≠ª∑
+
+tests\test_runtime_recovery.py:162: AssertionError
+------------------------------------------------ Captured stderr call -------------------------------------------------
+[32m[INFO] 2026-09-13 16:51:19,452 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-09-13 16:51:19,485 [RapidOCR] download_file.py:60: File exists and is valid: E:\vsCode\Programs\AhabAssistantLimbusCompany\.venv\Lib\site-packages\rapidocr\models\ch_PP-OCRv4_det_infer.onnx[0m
+[32m[INFO] 2026-09-13 16:51:19,485 [RapidOCR] main.py:55: Using E:\vsCode\Programs\AhabAssistantLimbusCompany\.venv\Lib\site-packages\rapidocr\models\ch_PP-OCRv4_det_infer.onnx[0m
+[32m[INFO] 2026-09-13 16:51:19,564 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-09-13 16:51:19,566 [RapidOCR] download_file.py:60: File exists and is valid: E:\vsCode\Programs\AhabAssistantLimbusCompany\.venv\Lib\site-packages\rapidocr\models\ch_ppocr_mobile_v2.0_cls_infer.onnx[0m
+[32m[INFO] 2026-09-13 16:51:19,573 [RapidOCR] main.py:55: Using E:\vsCode\Programs\AhabAssistantLimbusCompany\.venv\Lib\site-packages\rapidocr\models\ch_ppocr_mobile_v2.0_cls_infer.onnx[0m
+[32m[INFO] 2026-09-13 16:51:19,603 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-09-13 16:51:19,611 [RapidOCR] download_file.py:60: File exists and is valid: E:\vsCode\Programs\AhabAssistantLimbusCompany\.venv\Lib\site-packages\rapidocr\models\ch_PP-OCRv4_rec_infer.onnx[0m
+[32m[INFO] 2026-09-13 16:51:19,612 [RapidOCR] main.py:55: Using E:\vsCode\Programs\AhabAssistantLimbusCompany\.venv\Lib\site-packages\rapidocr\models\ch_PP-OCRv4_rec_infer.onnx[0m
+-------------------------------------------------- Captured log call --------------------------------------------------
+ERROR    AALC:back_init_menu.py:32 Œﬁ∑®∑µªÿ÷˜ΩÁ√Ê£¨≥¢ ‘÷ÿ∆Ù”Œœ∑
+=============================================== short test summary info ===============================================
+FAILED tests/test_runtime_recovery.py::test_return_home_exhaustion_delegates_one_owned_restart - AssertionError: »∑»œ...
+1 failed, 15 deselected in 5.09s

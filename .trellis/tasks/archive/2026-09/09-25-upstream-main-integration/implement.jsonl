@@ -1,0 +1,4 @@
+{"file":".trellis/spec/backend/index.md","reason":"自动化后端规范入口"}
+{"file":".trellis/spec/backend/error-handling.md","reason":"特征匹配异常与失败返回"}
+{"file":".trellis/spec/backend/runtime-recovery.md","reason":"保护 fork 截图和停止生命周期"}
+{"file":".trellis/tasks/archive/2026-09/09-25-team-top-upstream-sync/research/scope-evidence.md","reason":"上游差异与无冲突合并预检"}

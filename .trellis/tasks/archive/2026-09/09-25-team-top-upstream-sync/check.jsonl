@@ -1,0 +1,3 @@
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"全集成质量门"}
+{"file":".trellis/spec/backend/runtime-recovery.md","reason":"确认原有恢复与停止契约"}
+{"file":".trellis/tasks/09-25-team-top-upstream-sync/research/scope-evidence.md","reason":"复核两个交付目标与上游版本"}

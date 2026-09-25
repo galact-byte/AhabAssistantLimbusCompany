@@ -1,0 +1,242 @@
+FF.FF.FFFFFF.                                                                                                    [100%]
+====================================================== FAILURES =======================================================
+______________________ test_result_skip_requires_bottom_right_geometry[\u5224\u5b9a\u6210\u529f] ______________________
+
+outcome = 'ÅÐ¶¨³É¹¦'
+
+    @pytest.mark.parametrize("outcome", ["ÅÐ¶¨³É¹¦", "ÅÐ¶¨Ê§°Ü"])
+    def test_result_skip_requires_bottom_right_geometry(outcome):
+        entries = [(outcome, (500, 200, 700, 240)), ("SKIP", (1380, 796, 1455, 824))]
+        result = resolve_event_page(entries)
+>       assert result.state == "advance"
+E       AssertionError: assert 'wait' == 'advance'
+E         
+E         - advance
+E         + wait
+
+tests\test_event_result_progress.py:14: AssertionError
+______________________ test_result_skip_requires_bottom_right_geometry[\u5224\u5b9a\u5931\u8d25] ______________________
+
+outcome = 'ÅÐ¶¨Ê§°Ü'
+
+    @pytest.mark.parametrize("outcome", ["ÅÐ¶¨³É¹¦", "ÅÐ¶¨Ê§°Ü"])
+    def test_result_skip_requires_bottom_right_geometry(outcome):
+        entries = [(outcome, (500, 200, 700, 240)), ("SKIP", (1380, 796, 1455, 824))]
+        result = resolve_event_page(entries)
+>       assert result.state == "advance"
+E       AssertionError: assert 'wait' == 'advance'
+E         
+E         - advance
+E         + wait
+
+tests\test_event_result_progress.py:14: AssertionError
+____ test_result_does_not_click_narrative_or_misplaced_action[\u6545\u4e8b\u91cc\u7ee7\u7eed\u524d\u8fdb-bounds1] _____
+
+text = '¹ÊÊÂÀï¼ÌÐøÇ°½ø', bounds = (680, 800, 760, 840)
+
+    @pytest.mark.parametrize("text,bounds", [
+        ("SKIP", (10, 10, 80, 40)),
+        ("¹ÊÊÂÀï¼ÌÐøÇ°½ø", (680, 800, 760, 840)),
+        ("¼ÌÐø", (680, 100, 760, 140)),
+        ("SKIP", (1400, 810, 1300, 790)),
+    ])
+    def test_result_does_not_click_narrative_or_misplaced_action(text, bounds):
+        result = resolve_event_page([("ÅÐ¶¨³É¹¦", (500, 200, 700, 240)), (text, bounds)])
+>       assert result.state == "wait"
+E       AssertionError: assert 'advance' == 'wait'
+E         
+E         - wait
+E         + advance
+
+tests\test_event_result_progress.py:27: AssertionError
+___________________ test_result_does_not_click_narrative_or_misplaced_action[\u7ee7\u7eed-bounds2] ____________________
+
+text = '¼ÌÐø', bounds = (680, 100, 760, 140)
+
+    @pytest.mark.parametrize("text,bounds", [
+        ("SKIP", (10, 10, 80, 40)),
+        ("¹ÊÊÂÀï¼ÌÐøÇ°½ø", (680, 800, 760, 840)),
+        ("¼ÌÐø", (680, 100, 760, 140)),
+        ("SKIP", (1400, 810, 1300, 790)),
+    ])
+    def test_result_does_not_click_narrative_or_misplaced_action(text, bounds):
+        result = resolve_event_page([("ÅÐ¶¨³É¹¦", (500, 200, 700, 240)), (text, bounds)])
+>       assert result.state == "wait"
+E       AssertionError: assert 'advance' == 'wait'
+E         
+E         - wait
+E         + advance
+
+tests\test_event_result_progress.py:27: AssertionError
+___________________________ test_stuck_result_exits_before_total_battle_timeout[None-False] ___________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000209590C2EA0>, template = False, button = None
+
+    @pytest.mark.parametrize("template", [False, True])
+    @pytest.mark.parametrize("button", [None, "¼ÌÐø", "SKIP"])
+    def test_stuck_result_exits_before_total_battle_timeout(monkeypatch, template, button):
+        module = importlib.import_module("tasks.battle.battle")
+        entries = [("ÅÐ¶¨³É¹¦", (500, 200, 700, 240))]
+        if button:
+            entries.append((button, (1380, 796, 1455, 824)))
+        auto = _FightEventAuto([entries] * 100)
+        monkeypatch.setattr(module, "auto", auto)
+        monkeypatch.setattr(module, "sleep", lambda _: None)
+        monkeypatch.setattr(module, "monotonic", lambda: auto._frame, raising=False)
+        monkeypatch.setattr(module, "handle_server_error_dialog", lambda: None)
+        monkeypatch.setattr(module, "retry", lambda: True)
+        monkeypatch.setattr(auto, "click_element", lambda asset, **kw: template and auto._frame <= 100 and asset == "event/skip_assets.png")
+        battle = module.Battle(is_tool=True)
+>       assert battle.fight() is False
+E       assert None is False
+E        +  where None = wrapper()
+E        +    where wrapper = <tasks.battle.battle.Battle object at 0x000002095D8CA5D0>.fight
+
+tests\test_event_result_progress.py:46: AssertionError
+------------------------------------------------ Captured stderr call -------------------------------------------------
+[32m[INFO] 2026-09-13 16:36:09,607 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-09-13 16:36:09,667 [RapidOCR] download_file.py:60: File exists and is valid: E:\vsCode\Programs\AhabAssistantLimbusCompany\.venv\Lib\site-packages\rapidocr\models\ch_PP-OCRv4_det_infer.onnx[0m
+[32m[INFO] 2026-09-13 16:36:09,667 [RapidOCR] main.py:55: Using E:\vsCode\Programs\AhabAssistantLimbusCompany\.venv\Lib\site-packages\rapidocr\models\ch_PP-OCRv4_det_infer.onnx[0m
+[32m[INFO] 2026-09-13 16:36:09,860 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-09-13 16:36:09,862 [RapidOCR] download_file.py:60: File exists and is valid: E:\vsCode\Programs\AhabAssistantLimbusCompany\.venv\Lib\site-packages\rapidocr\models\ch_ppocr_mobile_v2.0_cls_infer.onnx[0m
+[32m[INFO] 2026-09-13 16:36:09,870 [RapidOCR] main.py:55: Using E:\vsCode\Programs\AhabAssistantLimbusCompany\.venv\Lib\site-packages\rapidocr\models\ch_ppocr_mobile_v2.0_cls_infer.onnx[0m
+[32m[INFO] 2026-09-13 16:36:09,948 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-09-13 16:36:09,963 [RapidOCR] download_file.py:60: File exists and is valid: E:\vsCode\Programs\AhabAssistantLimbusCompany\.venv\Lib\site-packages\rapidocr\models\ch_PP-OCRv4_rec_infer.onnx[0m
+[32m[INFO] 2026-09-13 16:36:09,963 [RapidOCR] main.py:55: Using E:\vsCode\Programs\AhabAssistantLimbusCompany\.venv\Lib\site-packages\rapidocr\models\ch_PP-OCRv4_rec_infer.onnx[0m
+___________________________ test_stuck_result_exits_before_total_battle_timeout[None-True] ____________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002095D8ECE90>, template = True, button = None
+
+    @pytest.mark.parametrize("template", [False, True])
+    @pytest.mark.parametrize("button", [None, "¼ÌÐø", "SKIP"])
+    def test_stuck_result_exits_before_total_battle_timeout(monkeypatch, template, button):
+        module = importlib.import_module("tasks.battle.battle")
+        entries = [("ÅÐ¶¨³É¹¦", (500, 200, 700, 240))]
+        if button:
+            entries.append((button, (1380, 796, 1455, 824)))
+        auto = _FightEventAuto([entries] * 100)
+        monkeypatch.setattr(module, "auto", auto)
+        monkeypatch.setattr(module, "sleep", lambda _: None)
+        monkeypatch.setattr(module, "monotonic", lambda: auto._frame, raising=False)
+        monkeypatch.setattr(module, "handle_server_error_dialog", lambda: None)
+        monkeypatch.setattr(module, "retry", lambda: True)
+        monkeypatch.setattr(auto, "click_element", lambda asset, **kw: template and auto._frame <= 100 and asset == "event/skip_assets.png")
+        battle = module.Battle(is_tool=True)
+>       assert battle.fight() is False
+E       assert None is False
+E        +  where None = wrapper()
+E        +    where wrapper = <tasks.battle.battle.Battle object at 0x000002095D8CAAD0>.fight
+
+tests\test_event_result_progress.py:46: AssertionError
+_______________________ test_stuck_result_exits_before_total_battle_timeout[\u7ee7\u7eed-False] _______________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002095D8D9130>, template = False, button = '¼ÌÐø'
+
+    @pytest.mark.parametrize("template", [False, True])
+    @pytest.mark.parametrize("button", [None, "¼ÌÐø", "SKIP"])
+    def test_stuck_result_exits_before_total_battle_timeout(monkeypatch, template, button):
+        module = importlib.import_module("tasks.battle.battle")
+        entries = [("ÅÐ¶¨³É¹¦", (500, 200, 700, 240))]
+        if button:
+            entries.append((button, (1380, 796, 1455, 824)))
+        auto = _FightEventAuto([entries] * 100)
+        monkeypatch.setattr(module, "auto", auto)
+        monkeypatch.setattr(module, "sleep", lambda _: None)
+        monkeypatch.setattr(module, "monotonic", lambda: auto._frame, raising=False)
+        monkeypatch.setattr(module, "handle_server_error_dialog", lambda: None)
+        monkeypatch.setattr(module, "retry", lambda: True)
+        monkeypatch.setattr(auto, "click_element", lambda asset, **kw: template and auto._frame <= 100 and asset == "event/skip_assets.png")
+        battle = module.Battle(is_tool=True)
+>       assert battle.fight() is False
+E       assert None is False
+E        +  where None = wrapper()
+E        +    where wrapper = <tasks.battle.battle.Battle object at 0x000002095D8ED5B0>.fight
+
+tests\test_event_result_progress.py:46: AssertionError
+_______________________ test_stuck_result_exits_before_total_battle_timeout[\u7ee7\u7eed-True] ________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002095D81B130>, template = True, button = '¼ÌÐø'
+
+    @pytest.mark.parametrize("template", [False, True])
+    @pytest.mark.parametrize("button", [None, "¼ÌÐø", "SKIP"])
+    def test_stuck_result_exits_before_total_battle_timeout(monkeypatch, template, button):
+        module = importlib.import_module("tasks.battle.battle")
+        entries = [("ÅÐ¶¨³É¹¦", (500, 200, 700, 240))]
+        if button:
+            entries.append((button, (1380, 796, 1455, 824)))
+        auto = _FightEventAuto([entries] * 100)
+        monkeypatch.setattr(module, "auto", auto)
+        monkeypatch.setattr(module, "sleep", lambda _: None)
+        monkeypatch.setattr(module, "monotonic", lambda: auto._frame, raising=False)
+        monkeypatch.setattr(module, "handle_server_error_dialog", lambda: None)
+        monkeypatch.setattr(module, "retry", lambda: True)
+        monkeypatch.setattr(auto, "click_element", lambda asset, **kw: template and auto._frame <= 100 and asset == "event/skip_assets.png")
+        battle = module.Battle(is_tool=True)
+>       assert battle.fight() is False
+E       assert None is False
+E        +  where None = wrapper()
+E        +    where wrapper = <tasks.battle.battle.Battle object at 0x000002095D8ED940>.fight
+
+tests\test_event_result_progress.py:46: AssertionError
+___________________________ test_stuck_result_exits_before_total_battle_timeout[SKIP-False] ___________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002095D81B8A0>, template = False, button = 'SKIP'
+
+    @pytest.mark.parametrize("template", [False, True])
+    @pytest.mark.parametrize("button", [None, "¼ÌÐø", "SKIP"])
+    def test_stuck_result_exits_before_total_battle_timeout(monkeypatch, template, button):
+        module = importlib.import_module("tasks.battle.battle")
+        entries = [("ÅÐ¶¨³É¹¦", (500, 200, 700, 240))]
+        if button:
+            entries.append((button, (1380, 796, 1455, 824)))
+        auto = _FightEventAuto([entries] * 100)
+        monkeypatch.setattr(module, "auto", auto)
+        monkeypatch.setattr(module, "sleep", lambda _: None)
+        monkeypatch.setattr(module, "monotonic", lambda: auto._frame, raising=False)
+        monkeypatch.setattr(module, "handle_server_error_dialog", lambda: None)
+        monkeypatch.setattr(module, "retry", lambda: True)
+        monkeypatch.setattr(auto, "click_element", lambda asset, **kw: template and auto._frame <= 100 and asset == "event/skip_assets.png")
+        battle = module.Battle(is_tool=True)
+>       assert battle.fight() is False
+E       assert None is False
+E        +  where None = wrapper()
+E        +    where wrapper = <tasks.battle.battle.Battle object at 0x000002095D8D96D0>.fight
+
+tests\test_event_result_progress.py:46: AssertionError
+___________________________ test_stuck_result_exits_before_total_battle_timeout[SKIP-True] ____________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002095DB68550>, template = True, button = 'SKIP'
+
+    @pytest.mark.parametrize("template", [False, True])
+    @pytest.mark.parametrize("button", [None, "¼ÌÐø", "SKIP"])
+    def test_stuck_result_exits_before_total_battle_timeout(monkeypatch, template, button):
+        module = importlib.import_module("tasks.battle.battle")
+        entries = [("ÅÐ¶¨³É¹¦", (500, 200, 700, 240))]
+        if button:
+            entries.append((button, (1380, 796, 1455, 824)))
+        auto = _FightEventAuto([entries] * 100)
+        monkeypatch.setattr(module, "auto", auto)
+        monkeypatch.setattr(module, "sleep", lambda _: None)
+        monkeypatch.setattr(module, "monotonic", lambda: auto._frame, raising=False)
+        monkeypatch.setattr(module, "handle_server_error_dialog", lambda: None)
+        monkeypatch.setattr(module, "retry", lambda: True)
+        monkeypatch.setattr(auto, "click_element", lambda asset, **kw: template and auto._frame <= 100 and asset == "event/skip_assets.png")
+        battle = module.Battle(is_tool=True)
+>       assert battle.fight() is False
+E       assert None is False
+E        +  where None = wrapper()
+E        +    where wrapper = <tasks.battle.battle.Battle object at 0x000002095D81BF00>.fight
+
+tests\test_event_result_progress.py:46: AssertionError
+=============================================== short test summary info ===============================================
+FAILED tests/test_event_result_progress.py::test_result_skip_requires_bottom_right_geometry[\u5224\u5b9a\u6210\u529f]
+FAILED tests/test_event_result_progress.py::test_result_skip_requires_bottom_right_geometry[\u5224\u5b9a\u5931\u8d25]
+FAILED tests/test_event_result_progress.py::test_result_does_not_click_narrative_or_misplaced_action[\u6545\u4e8b\u91cc\u7ee7\u7eed\u524d\u8fdb-bounds1]
+FAILED tests/test_event_result_progress.py::test_result_does_not_click_narrative_or_misplaced_action[\u7ee7\u7eed-bounds2]
+FAILED tests/test_event_result_progress.py::test_stuck_result_exits_before_total_battle_timeout[None-False] - assert ...
+FAILED tests/test_event_result_progress.py::test_stuck_result_exits_before_total_battle_timeout[None-True] - assert N...
+FAILED tests/test_event_result_progress.py::test_stuck_result_exits_before_total_battle_timeout[\u7ee7\u7eed-False]
+FAILED tests/test_event_result_progress.py::test_stuck_result_exits_before_total_battle_timeout[\u7ee7\u7eed-True] - ...
+FAILED tests/test_event_result_progress.py::test_stuck_result_exits_before_total_battle_timeout[SKIP-False] - assert ...
+FAILED tests/test_event_result_progress.py::test_stuck_result_exits_before_total_battle_timeout[SKIP-True] - assert N...
+10 failed, 3 passed in 2.36s

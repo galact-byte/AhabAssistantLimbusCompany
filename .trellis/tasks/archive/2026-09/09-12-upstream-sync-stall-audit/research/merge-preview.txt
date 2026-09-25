@@ -1,0 +1,38 @@
+669279c78440e8f2e53afc84770a8a3fd0fdb543
+100644 e460ccc54d33ab87aa9e72c7eb2b88db838fd42d 1	module/automation/automation.py
+100644 a4d7ee41942f8a29f9607ebf2e5874c57cb522cb 2	module/automation/automation.py
+100644 3996c46c7c43ab0189e48d886fe44cfde6fa5b7a 3	module/automation/automation.py
+100644 81808eb97a7d0e949e3e2490ce0dd13a624c5242 1	tasks/mirror/mirror.py
+100644 d0d4befbcd0e63c61961029206a1fac62dd349c0 2	tasks/mirror/mirror.py
+100644 81f833ec0ffaa5c0333e4f4e58052eaf6fae1109 3	tasks/mirror/mirror.py
+100644 14686286ecdc2efc63a2b0c52a14c6e388d69783 1	tasks/mirror/search_road.py
+100644 905f4304321a63916d54c5196efdfc51c7c12c92 2	tasks/mirror/search_road.py
+100644 326c286ed8b8f0837a0ff89603555375d8b23855 3	tasks/mirror/search_road.py
+100644 831320a2dbc182ad2117f022d902f59385d371e5 1	tasks/mirror/select_theme_pack.py
+100644 f97dc32244c35fa71c70098c12cc374e71b0fa1d 2	tasks/mirror/select_theme_pack.py
+100644 146d6f3e2710e5cb23f1752f271838c67903c411 3	tasks/mirror/select_theme_pack.py
+100644 4c185c733f57d97ca83611bd06642367d3e27f87 1	tasks/teams/team_formation.py
+100644 9d122971d15ea4cad4a1b73673a496c0598c0cef 2	tasks/teams/team_formation.py
+100644 b5488ec344317158acdafb483c5b153059b09d14 3	tasks/teams/team_formation.py
+
+Auto-merging app/resource_sync_coordinator.py
+Auto-merging app/setting_interface.py
+Auto-merging assets/config/config.example.yaml
+Auto-merging module/automation/automation.py
+CONFLICT (content): Merge conflict in module/automation/automation.py
+Auto-merging module/automation/screenshot.py
+Auto-merging module/system_actions.py
+Auto-merging module/update/check_update.py
+Auto-merging tasks/base/retry.py
+Auto-merging tasks/base/script_task_scheme.py
+Auto-merging tasks/battle/battle.py
+Auto-merging tasks/daily/luxcavation.py
+Auto-merging tasks/event/event_handling.py
+Auto-merging tasks/mirror/mirror.py
+CONFLICT (content): Merge conflict in tasks/mirror/mirror.py
+Auto-merging tasks/mirror/search_road.py
+CONFLICT (content): Merge conflict in tasks/mirror/search_road.py
+Auto-merging tasks/mirror/select_theme_pack.py
+CONFLICT (content): Merge conflict in tasks/mirror/select_theme_pack.py
+Auto-merging tasks/teams/team_formation.py
+CONFLICT (content): Merge conflict in tasks/teams/team_formation.py

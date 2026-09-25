@@ -1,0 +1,53 @@
+E722 Do not use bare `except`
+   --> tasks\battle\battle.py:331:21
+    |
+329 |                             confirm_button[1] - 350 * my_scale,
+330 |                         )
+331 |                     except:
+    |                     ^^^^^^
+332 |                         continue
+    |
+
+E722 Do not use bare `except`
+   --> tasks\battle\battle.py:382:17
+    |
+380 |                     if self.cur_turn == 1:
+381 |                         first_turn = True
+382 |                 except:
+    |                 ^^^^^^
+383 |                     self.cur_turn = -1  # 表示识别失败
+    |
+
+E722 Do not use bare `except`
+   --> tasks\battle\battle.py:394:17
+    |
+392 |                     ocr_result = [result.txts[i] for i in range(len(result.txts))]
+393 |                     ocr_result = "".join(ocr_result).lower()
+394 |                 except:
+    |                 ^^^^^^
+395 |                     ocr_result = ""
+396 |                 if "turn" in ocr_result:
+    |
+
+E722 Do not use bare `except`
+   --> tasks\battle\battle.py:426:17
+    |
+424 |                     ocr_result = [result.txts[i] for i in range(len(result.txts))]
+425 |                     ocr_result = "".join(ocr_result).lower()
+426 |                 except:
+    |                 ^^^^^^
+427 |                     ocr_result = ""
+428 |                 if (
+    |
+
+Found 4 errors.
+
+COMMAND: .venv/Scripts/python.exe -m ruff check tasks/event_page.py tasks/base/home_page.py tasks/base/back_init_menu.py tasks/base/retry.py module/automation/automation.py module/automation/screenshot.py tasks/battle/battle.py tests --ignore E722
+EXIT: 0
+All checks passed!
+
+COMMAND: .venv/Scripts/python.exe -m compileall -q tasks module tests
+EXIT: 0
+
+COMMAND: git diff --check
+EXIT: 0

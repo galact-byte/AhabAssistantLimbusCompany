@@ -1,0 +1,34 @@
+...F.                                                                                                            [100%]
+====================================================== FAILURES =======================================================
+______________________________________ test_monitor_stop_unwinds_a_paused_input _______________________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001A7AAA08A70>
+
+    def test_monitor_stop_unwinds_a_paused_input(monkeypatch):
+        module = importlib.import_module('tasks.base.retry_monitor')
+        from module.task_control import sleep
+        monitor = module.RetryMonitor(poll_interval=0.01)
+        entered = threading.Event()
+    
+        def paused_input():
+            entered.set()
+            sleep(3)
+    
+        monkeypatch.setattr(monitor, 'check_once', paused_input)
+        monitor._thread = threading.Thread(target=monitor._run)
+        monitor._thread.start()
+        assert entered.wait(2)
+        stopper = threading.Thread(target=monitor.stop)
+        stopper.start()
+        stopper.join(1)
+        try:
+>           assert not stopper.is_alive(), 'ÔİÍ£ÊäÈë×èÈûÁË¼à¿ØÍ£Ö¹'
+E           AssertionError: ÔİÍ£ÊäÈë×èÈûÁË¼à¿ØÍ£Ö¹
+E           assert not True
+E            +  where True = is_alive()
+E            +    where is_alive = <Thread(Thread-4 (stop), started 62212)>.is_alive
+
+tests\test_cooperative_stop.py:70: AssertionError
+=============================================== short test summary info ===============================================
+FAILED tests/test_cooperative_stop.py::test_monitor_stop_unwinds_a_paused_input - AssertionError: ÔİÍ£ÊäÈë×èÈûÁË¼à¿ØÍ£Ö¹
+1 failed, 4 passed in 7.90s

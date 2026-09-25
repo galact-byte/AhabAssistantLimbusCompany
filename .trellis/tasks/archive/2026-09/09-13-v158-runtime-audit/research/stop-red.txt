@@ -1,0 +1,97 @@
+FFF                                                                                                              [100%]
+====================================================== FAILURES =======================================================
+______________________________ test_stop_requests_interruption_without_native_terminate _______________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002D64B875220>
+
+    def test_stop_requests_interruption_without_native_terminate(monkeypatch):
+        scheme = importlib.import_module('tasks.base.script_task_scheme')
+        calls = []
+        worker = scheme.my_script_task()
+        monkeypatch.setattr(scheme.retry_monitor, 'stop', lambda: calls.append('join'))
+        monkeypatch.setattr(scheme.auto, 'reset_safety_locks', lambda: calls.append('replace-locks'))
+        worker.terminate()
+>       assert worker.stop_requested is True
+               ^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'my_script_task' object has no attribute 'stop_requested'
+
+tests\test_cooperative_stop.py:14: AttributeError
+------------------------------------------------ Captured stderr call -------------------------------------------------
+[32m[INFO] 2026-09-13 17:29:05,094 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-09-13 17:29:05,268 [RapidOCR] download_file.py:60: File exists and is valid: E:\vsCode\Programs\AhabAssistantLimbusCompany\.venv\Lib\site-packages\rapidocr\models\ch_PP-OCRv4_det_infer.onnx[0m
+[32m[INFO] 2026-09-13 17:29:05,268 [RapidOCR] main.py:55: Using E:\vsCode\Programs\AhabAssistantLimbusCompany\.venv\Lib\site-packages\rapidocr\models\ch_PP-OCRv4_det_infer.onnx[0m
+[32m[INFO] 2026-09-13 17:29:05,428 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-09-13 17:29:05,432 [RapidOCR] download_file.py:60: File exists and is valid: E:\vsCode\Programs\AhabAssistantLimbusCompany\.venv\Lib\site-packages\rapidocr\models\ch_ppocr_mobile_v2.0_cls_infer.onnx[0m
+[32m[INFO] 2026-09-13 17:29:05,434 [RapidOCR] main.py:55: Using E:\vsCode\Programs\AhabAssistantLimbusCompany\.venv\Lib\site-packages\rapidocr\models\ch_ppocr_mobile_v2.0_cls_infer.onnx[0m
+[32m[INFO] 2026-09-13 17:29:05,479 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-09-13 17:29:05,524 [RapidOCR] download_file.py:60: File exists and is valid: E:\vsCode\Programs\AhabAssistantLimbusCompany\.venv\Lib\site-packages\rapidocr\models\ch_PP-OCRv4_rec_infer.onnx[0m
+[32m[INFO] 2026-09-13 17:29:05,524 [RapidOCR] main.py:55: Using E:\vsCode\Programs\AhabAssistantLimbusCompany\.venv\Lib\site-packages\rapidocr\models\ch_PP-OCRv4_rec_infer.onnx[0m
+________________________________ test_monitor_retains_live_thread_until_join_completes ________________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002D64B874D60>
+
+    def test_monitor_retains_live_thread_until_join_completes(monkeypatch):
+        module = importlib.import_module('tasks.base.retry_monitor')
+        monitor = module.RetryMonitor()
+        entered, release = threading.Event(), threading.Event()
+        monitor._thread = threading.Thread(target=lambda: (entered.set(), release.wait(10)))
+        monitor._thread.start()
+        assert entered.wait(2)
+        old_thread = monitor._thread
+        stopper = threading.Thread(target=monitor.stop)
+        stopper.start()
+        try:
+            stopper.join(2.2)
+>           assert monitor._thread is old_thread
+E           assert None is <Thread(Thread-1 (<lambda>), started 41352)>
+E            +  where None = <tasks.base.retry_monitor.RetryMonitor object at 0x000002D64B837ED0>._thread
+
+tests\test_cooperative_stop.py:30: AssertionError
+__________________________________ test_stop_waits_for_native_boundary_then_unwinds ___________________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002D66E669910>
+
+    def test_stop_waits_for_native_boundary_then_unwinds(monkeypatch):
+        scheme = importlib.import_module('tasks.base.script_task_scheme')
+        entered, release = threading.Event(), threading.Event()
+        steps = []
+        worker = scheme.my_script_task()
+        def task():
+            entered.set()
+            release.wait(5)  # Ä£Äâ²»ÄÜÖÐ¶ÏµÄÔ­Éúµ÷ÓÃ
+            from module.task_control import checkpoint
+            checkpoint()
+            steps.append('unsafe-next-action')
+        monkeypatch.setattr(scheme, 'script_task', task)
+        monkeypatch.setattr(scheme, 'cfg', SimpleNamespace(get_value=lambda *a: False))
+        monkeypatch.setattr(scheme.retry_monitor, 'stop', lambda: steps.append('monitor-joined'))
+        monkeypatch.setattr(scheme.auto, 'clear_img_cache', lambda: steps.append('cache-cleared'))
+        runner = threading.Thread(target=worker.run)
+        runner.start()
+        assert entered.wait(2)
+        try:
+            worker.terminate()
+            assert runner.is_alive()
+>           assert steps == []
+E           AssertionError: assert ['monitor-joined'] == []
+E             
+E             Left contains one more item: 'monitor-joined'
+E             Use -v to get more diff
+
+tests\test_cooperative_stop.py:60: AssertionError
+-------------------------------------------------- Captured log call --------------------------------------------------
+ERROR    AALC:script_task_scheme.py:539 ½Å±¾Ïß³ÌÖ´ÐÐÊ§°Ü
+Traceback (most recent call last):
+  File "E:\vsCode\Programs\AhabAssistantLimbusCompany\tasks\base\script_task_scheme.py", line 522, in run
+    self._run()
+    ~~~~~~~~~^^
+  File "E:\vsCode\Programs\AhabAssistantLimbusCompany\tasks\base\script_task_scheme.py", line 561, in _run
+    ret = script_task()
+  File "E:\vsCode\Programs\AhabAssistantLimbusCompany\tests\test_cooperative_stop.py", line 47, in task
+    from module.task_control import checkpoint
+ModuleNotFoundError: No module named 'module.task_control'
+=============================================== short test summary info ===============================================
+FAILED tests/test_cooperative_stop.py::test_stop_requests_interruption_without_native_terminate - AttributeError: 'my...
+FAILED tests/test_cooperative_stop.py::test_monitor_retains_live_thread_until_join_completes - assert None is <Thread...
+FAILED tests/test_cooperative_stop.py::test_stop_waits_for_native_boundary_then_unwinds - AssertionError: assert ['mo...
+3 failed in 6.32s

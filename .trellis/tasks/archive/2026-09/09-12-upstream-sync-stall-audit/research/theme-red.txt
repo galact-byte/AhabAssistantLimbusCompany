@@ -1,0 +1,152 @@
+FF                                                                                                               [100%]
+====================================================== FAILURES =======================================================
+______________________________ test_theme_pack_failure_has_bounded_recovery[screenshot] _______________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001AAB87B4FC0>, failure = 'screenshot'
+
+    @pytest.mark.parametrize("failure", ["screenshot", "recognition"])
+    def test_theme_pack_failure_has_bounded_recovery(monkeypatch, failure):
+        module = importlib.import_module("tasks.mirror.select_theme_pack")
+        calls = []
+        frames = 0
+    
+        def screenshot(*args, **kwargs):
+            nonlocal frames
+            frames += 1
+            if frames > 40:
+                pytest.fail("Ö÷Ìâ°üÊ§°Ü³¬¹ı40Ö¡£¬Ô¤Ëã±»continueÈÆ¹ı")
+            return None if failure == "screenshot" else object()
+    
+        def find(*args, **kwargs):
+            raise ValueError("Ê¶±ğÒì³£")
+    
+        monkeypatch.setattr(module, "auto", SimpleNamespace(take_screenshot=screenshot, find_element=find))
+        monkeypatch.setattr(module, "cfg", SimpleNamespace(set_win_size=1080, select_event_pack=False, skip_event_pack=False))
+        monkeypatch.setattr(module, "path_manager", SimpleNamespace(current_language="zh_cn"))
+        monkeypatch.setattr(module, "theme_list", SimpleNamespace(get_effective_theme_pack_list=lambda *args: {}, preferred_thresholds=0))
+        monkeypatch.setattr(module, "is_on_mirror_map", lambda _: False)
+        monkeypatch.setattr(module, "back_init_menu", lambda **kwargs: calls.append(kwargs) or False)
+>       module.select_theme_pack(floor=1)
+
+tests\test_theme_pack_recovery_budget.py:29: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+module\decorator\decorator.py:18: in wrapper
+    result = func(*args, **kw)
+             ^^^^^^^^^^^^^^^^^
+tasks\mirror\select_theme_pack.py:71: in select_theme_pack
+    while auto.take_screenshot() is None:
+          ^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+args = (), kwargs = {}
+
+    def screenshot(*args, **kwargs):
+        nonlocal frames
+        frames += 1
+        if frames > 40:
+>           pytest.fail("Ö÷Ìâ°üÊ§°Ü³¬¹ı40Ö¡£¬Ô¤Ëã±»continueÈÆ¹ı")
+E           Failed: Ö÷Ìâ°üÊ§°Ü³¬¹ı40Ö¡£¬Ô¤Ëã±»continueÈÆ¹ı
+
+tests\test_theme_pack_recovery_budget.py:17: Failed
+------------------------------------------------ Captured stderr call -------------------------------------------------
+[32m[INFO] 2026-09-12 14:20:16,718 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-09-12 14:20:16,791 [RapidOCR] download_file.py:60: File exists and is valid: E:\vsCode\Programs\AhabAssistantLimbusCompany\.venv\Lib\site-packages\rapidocr\models\ch_PP-OCRv4_det_infer.onnx[0m
+[32m[INFO] 2026-09-12 14:20:16,792 [RapidOCR] main.py:55: Using E:\vsCode\Programs\AhabAssistantLimbusCompany\.venv\Lib\site-packages\rapidocr\models\ch_PP-OCRv4_det_infer.onnx[0m
+[32m[INFO] 2026-09-12 14:20:17,043 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-09-12 14:20:17,046 [RapidOCR] download_file.py:60: File exists and is valid: E:\vsCode\Programs\AhabAssistantLimbusCompany\.venv\Lib\site-packages\rapidocr\models\ch_ppocr_mobile_v2.0_cls_infer.onnx[0m
+[32m[INFO] 2026-09-12 14:20:17,048 [RapidOCR] main.py:55: Using E:\vsCode\Programs\AhabAssistantLimbusCompany\.venv\Lib\site-packages\rapidocr\models\ch_ppocr_mobile_v2.0_cls_infer.onnx[0m
+[32m[INFO] 2026-09-12 14:20:17,183 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-09-12 14:20:17,205 [RapidOCR] download_file.py:60: File exists and is valid: E:\vsCode\Programs\AhabAssistantLimbusCompany\.venv\Lib\site-packages\rapidocr\models\ch_PP-OCRv4_rec_infer.onnx[0m
+[32m[INFO] 2026-09-12 14:20:17,205 [RapidOCR] main.py:55: Using E:\vsCode\Programs\AhabAssistantLimbusCompany\.venv\Lib\site-packages\rapidocr\models\ch_PP-OCRv4_rec_infer.onnx[0m
+______________________________ test_theme_pack_failure_has_bounded_recovery[recognition] ______________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001AAB87B4C30>, failure = 'recognition'
+
+    @pytest.mark.parametrize("failure", ["screenshot", "recognition"])
+    def test_theme_pack_failure_has_bounded_recovery(monkeypatch, failure):
+        module = importlib.import_module("tasks.mirror.select_theme_pack")
+        calls = []
+        frames = 0
+    
+        def screenshot(*args, **kwargs):
+            nonlocal frames
+            frames += 1
+            if frames > 40:
+                pytest.fail("Ö÷Ìâ°üÊ§°Ü³¬¹ı40Ö¡£¬Ô¤Ëã±»continueÈÆ¹ı")
+            return None if failure == "screenshot" else object()
+    
+        def find(*args, **kwargs):
+            raise ValueError("Ê¶±ğÒì³£")
+    
+        monkeypatch.setattr(module, "auto", SimpleNamespace(take_screenshot=screenshot, find_element=find))
+        monkeypatch.setattr(module, "cfg", SimpleNamespace(set_win_size=1080, select_event_pack=False, skip_event_pack=False))
+        monkeypatch.setattr(module, "path_manager", SimpleNamespace(current_language="zh_cn"))
+        monkeypatch.setattr(module, "theme_list", SimpleNamespace(get_effective_theme_pack_list=lambda *args: {}, preferred_thresholds=0))
+        monkeypatch.setattr(module, "is_on_mirror_map", lambda _: False)
+        monkeypatch.setattr(module, "back_init_menu", lambda **kwargs: calls.append(kwargs) or False)
+>       module.select_theme_pack(floor=1)
+
+tests\test_theme_pack_recovery_budget.py:29: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+module\decorator\decorator.py:18: in wrapper
+    result = func(*args, **kw)
+             ^^^^^^^^^^^^^^^^^
+tasks\mirror\select_theme_pack.py:77: in select_theme_pack
+    if auto.take_screenshot() is None:
+       ^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+args = (), kwargs = {}
+
+    def screenshot(*args, **kwargs):
+        nonlocal frames
+        frames += 1
+        if frames > 40:
+>           pytest.fail("Ö÷Ìâ°üÊ§°Ü³¬¹ı40Ö¡£¬Ô¤Ëã±»continueÈÆ¹ı")
+E           Failed: Ö÷Ìâ°üÊ§°Ü³¬¹ı40Ö¡£¬Ô¤Ëã±»continueÈÆ¹ı
+
+tests\test_theme_pack_recovery_budget.py:17: Failed
+-------------------------------------------------- Captured log call --------------------------------------------------
+ERROR    AALC:select_theme_pack.py:140 Ê¶±ğÖ÷Ìâ°ü³ö´í:Ê¶±ğÒì³£
+ERROR    AALC:select_theme_pack.py:140 Ê¶±ğÖ÷Ìâ°ü³ö´í:Ê¶±ğÒì³£
+ERROR    AALC:select_theme_pack.py:140 Ê¶±ğÖ÷Ìâ°ü³ö´í:Ê¶±ğÒì³£
+ERROR    AALC:select_theme_pack.py:140 Ê¶±ğÖ÷Ìâ°ü³ö´í:Ê¶±ğÒì³£
+ERROR    AALC:select_theme_pack.py:140 Ê¶±ğÖ÷Ìâ°ü³ö´í:Ê¶±ğÒì³£
+ERROR    AALC:select_theme_pack.py:140 Ê¶±ğÖ÷Ìâ°ü³ö´í:Ê¶±ğÒì³£
+ERROR    AALC:select_theme_pack.py:140 Ê¶±ğÖ÷Ìâ°ü³ö´í:Ê¶±ğÒì³£
+ERROR    AALC:select_theme_pack.py:140 Ê¶±ğÖ÷Ìâ°ü³ö´í:Ê¶±ğÒì³£
+ERROR    AALC:select_theme_pack.py:140 Ê¶±ğÖ÷Ìâ°ü³ö´í:Ê¶±ğÒì³£
+ERROR    AALC:select_theme_pack.py:140 Ê¶±ğÖ÷Ìâ°ü³ö´í:Ê¶±ğÒì³£
+ERROR    AALC:select_theme_pack.py:140 Ê¶±ğÖ÷Ìâ°ü³ö´í:Ê¶±ğÒì³£
+ERROR    AALC:select_theme_pack.py:140 Ê¶±ğÖ÷Ìâ°ü³ö´í:Ê¶±ğÒì³£
+ERROR    AALC:select_theme_pack.py:140 Ê¶±ğÖ÷Ìâ°ü³ö´í:Ê¶±ğÒì³£
+ERROR    AALC:select_theme_pack.py:140 Ê¶±ğÖ÷Ìâ°ü³ö´í:Ê¶±ğÒì³£
+ERROR    AALC:select_theme_pack.py:140 Ê¶±ğÖ÷Ìâ°ü³ö´í:Ê¶±ğÒì³£
+ERROR    AALC:select_theme_pack.py:140 Ê¶±ğÖ÷Ìâ°ü³ö´í:Ê¶±ğÒì³£
+ERROR    AALC:select_theme_pack.py:140 Ê¶±ğÖ÷Ìâ°ü³ö´í:Ê¶±ğÒì³£
+ERROR    AALC:select_theme_pack.py:140 Ê¶±ğÖ÷Ìâ°ü³ö´í:Ê¶±ğÒì³£
+ERROR    AALC:select_theme_pack.py:140 Ê¶±ğÖ÷Ìâ°ü³ö´í:Ê¶±ğÒì³£
+ERROR    AALC:select_theme_pack.py:140 Ê¶±ğÖ÷Ìâ°ü³ö´í:Ê¶±ğÒì³£
+ERROR    AALC:select_theme_pack.py:140 Ê¶±ğÖ÷Ìâ°ü³ö´í:Ê¶±ğÒì³£
+ERROR    AALC:select_theme_pack.py:140 Ê¶±ğÖ÷Ìâ°ü³ö´í:Ê¶±ğÒì³£
+ERROR    AALC:select_theme_pack.py:140 Ê¶±ğÖ÷Ìâ°ü³ö´í:Ê¶±ğÒì³£
+ERROR    AALC:select_theme_pack.py:140 Ê¶±ğÖ÷Ìâ°ü³ö´í:Ê¶±ğÒì³£
+ERROR    AALC:select_theme_pack.py:140 Ê¶±ğÖ÷Ìâ°ü³ö´í:Ê¶±ğÒì³£
+ERROR    AALC:select_theme_pack.py:140 Ê¶±ğÖ÷Ìâ°ü³ö´í:Ê¶±ğÒì³£
+ERROR    AALC:select_theme_pack.py:140 Ê¶±ğÖ÷Ìâ°ü³ö´í:Ê¶±ğÒì³£
+ERROR    AALC:select_theme_pack.py:140 Ê¶±ğÖ÷Ìâ°ü³ö´í:Ê¶±ğÒì³£
+ERROR    AALC:select_theme_pack.py:140 Ê¶±ğÖ÷Ìâ°ü³ö´í:Ê¶±ğÒì³£
+ERROR    AALC:select_theme_pack.py:140 Ê¶±ğÖ÷Ìâ°ü³ö´í:Ê¶±ğÒì³£
+ERROR    AALC:select_theme_pack.py:140 Ê¶±ğÖ÷Ìâ°ü³ö´í:Ê¶±ğÒì³£
+ERROR    AALC:select_theme_pack.py:140 Ê¶±ğÖ÷Ìâ°ü³ö´í:Ê¶±ğÒì³£
+ERROR    AALC:select_theme_pack.py:140 Ê¶±ğÖ÷Ìâ°ü³ö´í:Ê¶±ğÒì³£
+ERROR    AALC:select_theme_pack.py:140 Ê¶±ğÖ÷Ìâ°ü³ö´í:Ê¶±ğÒì³£
+ERROR    AALC:select_theme_pack.py:140 Ê¶±ğÖ÷Ìâ°ü³ö´í:Ê¶±ğÒì³£
+ERROR    AALC:select_theme_pack.py:140 Ê¶±ğÖ÷Ìâ°ü³ö´í:Ê¶±ğÒì³£
+ERROR    AALC:select_theme_pack.py:140 Ê¶±ğÖ÷Ìâ°ü³ö´í:Ê¶±ğÒì³£
+ERROR    AALC:select_theme_pack.py:140 Ê¶±ğÖ÷Ìâ°ü³ö´í:Ê¶±ğÒì³£
+ERROR    AALC:select_theme_pack.py:140 Ê¶±ğÖ÷Ìâ°ü³ö´í:Ê¶±ğÒì³£
+=============================================== short test summary info ===============================================
+FAILED tests/test_theme_pack_recovery_budget.py::test_theme_pack_failure_has_bounded_recovery[screenshot] - Failed: ...
+FAILED tests/test_theme_pack_recovery_budget.py::test_theme_pack_failure_has_bounded_recovery[recognition] - Failed: ...
+2 failed in 3.88s

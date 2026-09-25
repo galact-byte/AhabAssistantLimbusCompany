@@ -1,0 +1,167 @@
+[
+  {
+    "cell": null,
+    "code": "F841",
+    "end_location": {
+      "column": 26,
+      "row": 792
+    },
+    "filename": "E:\\vsCode\\Programs\\AhabAssistantLimbusCompany\\tasks\\mirror\\mirror.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "",
+          "end_location": {
+            "column": 29,
+            "row": 792
+          },
+          "location": {
+            "column": 9,
+            "row": 792
+          }
+        }
+      ],
+      "message": "Remove assignment to unused variable `first_single_plus`"
+    },
+    "location": {
+      "column": 9,
+      "row": 792
+    },
+    "message": "Local variable `first_single_plus` is assigned to but never used",
+    "noqa_row": 792,
+    "url": "https://docs.astral.sh/ruff/rules/unused-variable"
+  },
+  {
+    "cell": null,
+    "code": "F841",
+    "end_location": {
+      "column": 27,
+      "row": 793
+    },
+    "filename": "E:\\vsCode\\Programs\\AhabAssistantLimbusCompany\\tasks\\mirror\\mirror.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "",
+          "end_location": {
+            "column": 30,
+            "row": 793
+          },
+          "location": {
+            "column": 9,
+            "row": 793
+          }
+        }
+      ],
+      "message": "Remove assignment to unused variable `double_plus_offset`"
+    },
+    "location": {
+      "column": 9,
+      "row": 793
+    },
+    "message": "Local variable `double_plus_offset` is assigned to but never used",
+    "noqa_row": 793,
+    "url": "https://docs.astral.sh/ruff/rules/unused-variable"
+  },
+  {
+    "cell": null,
+    "code": "F841",
+    "end_location": {
+      "column": 23,
+      "row": 794
+    },
+    "filename": "E:\\vsCode\\Programs\\AhabAssistantLimbusCompany\\tasks\\mirror\\mirror.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "",
+          "end_location": {
+            "column": 26,
+            "row": 794
+          },
+          "location": {
+            "column": 9,
+            "row": 794
+          }
+        }
+      ],
+      "message": "Remove assignment to unused variable `star_card_size`"
+    },
+    "location": {
+      "column": 9,
+      "row": 794
+    },
+    "message": "Local variable `star_card_size` is assigned to but never used",
+    "noqa_row": 794,
+    "url": "https://docs.astral.sh/ruff/rules/unused-variable"
+  },
+  {
+    "cell": null,
+    "code": "E712",
+    "end_location": {
+      "column": 113,
+      "row": 893
+    },
+    "filename": "E:\\vsCode\\Programs\\AhabAssistantLimbusCompany\\tasks\\mirror\\mirror.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "not scroll",
+          "end_location": {
+            "column": 113,
+            "row": 893
+          },
+          "location": {
+            "column": 98,
+            "row": 893
+          }
+        }
+      ],
+      "message": "Replace with `not scroll`"
+    },
+    "location": {
+      "column": 98,
+      "row": 893
+    },
+    "message": "Avoid equality comparisons to `False`; use `not scroll:` for false checks",
+    "noqa_row": 893,
+    "url": "https://docs.astral.sh/ruff/rules/true-false-comparison"
+  },
+  {
+    "cell": null,
+    "code": "E712",
+    "end_location": {
+      "column": 114,
+      "row": 904
+    },
+    "filename": "E:\\vsCode\\Programs\\AhabAssistantLimbusCompany\\tasks\\mirror\\mirror.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "not select_system",
+          "end_location": {
+            "column": 114,
+            "row": 904
+          },
+          "location": {
+            "column": 92,
+            "row": 904
+          }
+        }
+      ],
+      "message": "Replace with `not select_system`"
+    },
+    "location": {
+      "column": 92,
+      "row": 904
+    },
+    "message": "Avoid equality comparisons to `False`; use `not select_system:` for false checks",
+    "noqa_row": 904,
+    "url": "https://docs.astral.sh/ruff/rules/true-false-comparison"
+  }
+]

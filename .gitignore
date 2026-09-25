@@ -50,3 +50,6 @@ issue-evidence/
 .trellis/tasks/archive/2026-09/09-12-upstream-sync-stall-audit/research/evidence/
 .trellis/tasks/archive/2026-09/09-12-upstream-sync-stall-audit/research/log-*.txt
 .trellis/tasks/archive/2026-09/09-12-upstream-sync-stall-audit/research/log-*.json
+# 09-13 原始 Windows 事件包含本机标识与 SID，仅本地留存
+.trellis/tasks/archive/2026-09/09-13-v158-runtime-audit/research/runtime-windows-events.xml
+.trellis/tasks/archive/2026-09/09-13-v158-runtime-audit/research/runtime-windows-events.json
