@@ -1090,9 +1090,9 @@ class Mirror:
             if loop_count < 0:
                 log.error("无法进入镜牢,尝试回到初始界面")
                 back_init_menu()
-                break
+                raise cannotOperateGameError("镜牢选队确认超时")
             if retry() is False:
-                return False
+                raise cannotOperateGameError("镜牢选队确认期间恢复失败")
             if auto.click_element("mirror/road_to_mir/level_confirm_assets.png"):
                 continue
             if auto.click_element("mirror/road_to_mir/select_team_confirm_assets.png"):

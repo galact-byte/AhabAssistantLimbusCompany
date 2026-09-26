@@ -107,8 +107,8 @@ def _reset_team_list(frame, scale, *, verify_scroll=True):
         stable = stable + 1 if next_frame[0].signature == frame[0].signature else 0
         frame = next_frame
         if stable >= 2:
-            if not frame[0].first_row_at_top:
-                raise ValueError("列表停止滚动但首行未完整归顶")
+            if not frame[0].has_known_top_anchor:
+                raise ValueError("列表停止滚动但未识别到顶部固定首项")
             if verify_scroll:
                 # 静止也可能是后台滚轮未生效；用一次下滚和回顶验证输入，
                 # 不为证明首行而遍历无关的40个槽。
@@ -176,6 +176,8 @@ def select_battle_team(num):
             raise ValueError("编号对应多个编队")
         if matches:
             target = matches[0]
+        elif cfg.select_team_by_order and frame[0].has_known_top_anchor and num <= len(frame[0].rows):
+            target = frame[0].names[num - 1]
         else:
             frame = _reset_team_list(frame, scale)
             target, frame = _scan_team_order(frame, scale, num)

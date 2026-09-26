@@ -51,6 +51,30 @@ def test_header_overlap_is_not_treated_as_first_row():
     assert not page.first_row_at_top
 
 
+def test_known_first_entry_requires_name_and_top_geometry():
+    entries = [
+        ("编队", (140, 344, 184, 371)),
+        ("剧情关卡", (130, 377, 199, 402)),
+        ("编队#2", (132, 422, 195, 447)),
+    ]
+    page = read_team_list(entries, (1500, 222), 0.625)
+    assert page is not None
+    assert page.has_known_top_anchor
+    renamed = read_team_list(entries[:1] + [("其他", entries[1][1])] + entries[2:], (1500, 222), 0.625)
+    assert renamed is not None
+    assert not renamed.has_known_top_anchor
+    displaced = read_team_list(
+        entries[:1] + [
+            (text, tuple(coordinate + (50 if index % 2 else 0) for index, coordinate in enumerate(bounds)))
+            for text, bounds in entries[1:]
+        ],
+        (1500, 222),
+        0.625,
+    )
+    assert displaced is not None
+    assert not displaced.has_known_top_anchor
+
+
 def test_missing_middle_row_does_not_renumber_later_rows():
     entries = entries_at_scale(1)
     del entries[2]
