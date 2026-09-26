@@ -51,7 +51,7 @@ class ListScreen:
         return {text: [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2] for text, b in self.get_ocr_entries()}
 
     def mouse_click(self, x, y, **kwargs):
-        if x < 250 and y >= 390:
+        if x < 250 and y >= 377:
             index = min(round(self.start + (y - 400) / 45), len(self.names) - 1)
             self.clicks.append(index)
             if self.wrong_clicks:
@@ -79,6 +79,39 @@ def screen(monkeypatch, tmp_path):
     monkeypatch.setattr(formation, "cfg", SimpleNamespace(set_win_size=900, select_team_by_order=True, simulator=False))
     monkeypatch.chdir(tmp_path)
     return fake
+
+
+def test_recorded_900p_top_rows_select_without_unresponsive_wheel(screen, monkeypatch):
+    # 2026-09-26 04:04 失败帧：顶部“剧情关卡”及“编队#2”，滚轮消息不改变列表。
+    screen.names = ["剧情关卡", "编队#2", "编队#3", "编队#4", "编队#5", "编队#6", "编队#7"]
+    screen.stuck = True
+    original_entries = screen.get_ocr_entries
+
+    def captured_entries():
+        entries = original_entries()
+        entries[0] = ("编队", (140, 344, 184, 371))
+        for index, name in enumerate(screen.names):
+            if name == "剧情关卡":
+                entries[index + 3] = (name, (130, 377, 199, 402))
+            else:
+                y = 422 + (index - 1) * 45
+                entries[index + 3] = (name, (132, y, 195, y + 25))
+        return entries
+
+    monkeypatch.setattr(screen, "get_ocr_entries", captured_entries)
+    for target in (1, 2):
+        screen.frames = 0
+        assert formation.select_battle_team(target) is True
+        assert screen.selected == screen.names[target - 1]
+    assert screen.clicks == [0, 1]
+    assert screen.scrolls == []
+
+
+def test_top_geometry_without_known_first_item_cannot_authorize_ordered_click(screen):
+    screen.names[0] = "未知首项"
+    screen.stuck = True
+    assert formation.select_battle_team(2) is False
+    assert not screen.clicks
 
 
 def test_order_uses_current_second_item_not_number_two_and_corrects_wrong_click(screen):
@@ -123,6 +156,9 @@ def test_uncertain_selection_fails_with_finite_budget(screen, failure):
         screen.names[1] = screen.names[2]
     elif failure == "absent":
         screen.names = screen.names[:8]
+    elif failure == "stuck":
+        screen.start = 16
+        screen.stuck = True
     elif failure == "wrong_clicks":
         screen.wrong_clicks = 100
     else:
@@ -194,6 +230,20 @@ def test_named_visible_target_does_not_require_reset_or_40_slots(screen, monkeyp
     assert not screen.scrolls
 
 
+def test_scroll_stopping_mid_list_cannot_masquerade_as_top(screen, monkeypatch):
+    screen.start = 16
+    original = screen.mouse_swipe_for_team_scroll
+
+    def blocked_above_midpoint(x, y, dy=0, **kwargs):
+        result = original(x, y, dy=dy, **kwargs)
+        screen.start = max(16, screen.start)
+        return result
+
+    monkeypatch.setattr(screen, "mouse_swipe_for_team_scroll", blocked_above_midpoint)
+    assert formation.select_battle_team(2) is False
+    assert not screen.clicks
+
+
 def test_upward_scroll_failure_mid_list_cannot_authorize_ordered_selection(screen, monkeypatch):
     screen.start = 16
     original = screen.mouse_swipe_for_team_scroll
@@ -223,6 +273,58 @@ def test_simulator_keeps_specialized_gesture_path(screen, monkeypatch, simulator
     monkeypatch.setattr(formation.cfg, "simulator_type", simulator_type, raising=False)
     assert formation.select_battle_team(2) is True
     assert all(abs(distance) > 100 for distance in screen.scrolls)
+
+
+@pytest.mark.parametrize("retry_ok", [True, False])
+def test_mirror_team_confirmation_failure_is_terminal(monkeypatch, retry_ok):
+    mirror = importlib.import_module("tasks.mirror.mirror")
+    calls = []
+    monkeypatch.setattr(mirror, "select_battle_team", lambda n: True)
+    monkeypatch.setattr(mirror, "cfg", SimpleNamespace(config=SimpleNamespace(teams={})))
+    monkeypatch.setattr(mirror, "auto", SimpleNamespace(
+        model="clam", find_element=lambda *a, **k: None,
+        take_screenshot=lambda: object(), click_element=lambda *a, **k: False,
+        find_language_text=lambda *a, **k: False, mouse_to_blank=lambda **k: None,
+    ))
+    monkeypatch.setattr(mirror, "retry", lambda: retry_ok)
+    monkeypatch.setattr(mirror, "back_init_menu", lambda: calls.append("home") or True)
+    monkeypatch.setattr(mirror, "sleep", lambda *_: None)
+    monkeypatch.setattr(mirror.time, "sleep", lambda *_: None)
+    with pytest.raises(mirror.cannotOperateGameError):
+        mirror.Mirror.select_mirror_team(SimpleNamespace(team_number=2, team_order=2))
+    assert calls == (["home"] if retry_ok else [])
+
+
+def test_mirror_team_confirmation_reaches_coins(monkeypatch):
+    mirror = importlib.import_module("tasks.mirror.mirror")
+    calls = []
+    monkeypatch.setattr(mirror, "select_battle_team", lambda n: True)
+    monkeypatch.setattr(mirror, "cfg", SimpleNamespace(config=SimpleNamespace(teams={})))
+    monkeypatch.setattr(mirror, "auto", SimpleNamespace(
+        model="clam",
+        find_element=lambda path, **kwargs: (1, 1) if calls and path.endswith("coins_assets.png") else None,
+        take_screenshot=lambda: object(),
+        click_element=lambda path: calls.append(path) or True,
+        mouse_to_blank=lambda **kwargs: None,
+    ))
+    monkeypatch.setattr(mirror, "retry", lambda: True)
+    monkeypatch.setattr(mirror, "sleep", lambda *_: None)
+    monkeypatch.setattr(mirror.time, "sleep", lambda *_: None)
+    mirror.Mirror.select_mirror_team(SimpleNamespace(team_number=2, team_order=2))
+    assert calls == ["mirror/road_to_mir/level_confirm_assets.png"]
+
+
+def test_mirror_team_confirmation_exception_stops_top_level(monkeypatch):
+    scheme = importlib.import_module("tasks.base.script_task_scheme")
+    mirror = importlib.import_module("tasks.mirror.mirror")
+    monkeypatch.setattr(scheme.cfg, "auto_hard_mirror", False)
+    def fail_confirmation():
+        raise mirror.cannotOperateGameError("选队确认超时")
+
+    monkeypatch.setattr(scheme, "Mirror", lambda *_: SimpleNamespace(run=fail_confirmation))
+    monkeypatch.setattr(scheme, "back_init_menu", lambda: pytest.fail("失败后不能按成功返回首页"))
+    monkeypatch.setattr(scheme, "make_enkephalin_module", lambda: pytest.fail("失败后不能按成功换饼"))
+    assert scheme.onetime_mir_process(None, 2) is False
 
 
 def test_mirror_failure_never_confirms_or_loads_team_code(monkeypatch):

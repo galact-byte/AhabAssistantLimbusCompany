@@ -38,6 +38,10 @@ class TeamListPage:
     def first_row_at_top(self) -> bool:
         return 50 <= (self.rows[0].position[1] - self.header_y) / self.scale <= 95
 
+    @property
+    def has_known_top_anchor(self) -> bool:
+        return self.first_row_at_top and self.rows[0].name == "剧情关卡"
+
 
 def read_team_list(entries, identify_position, scale) -> TeamListPage | None:
     x = identify_position[0] - 2150 * scale
