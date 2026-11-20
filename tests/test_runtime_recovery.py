@@ -108,7 +108,8 @@ def test_mirror_search_mode_survives_next_iteration(remaining, expected):
     def capture():
         raise StopIteration
     auto.take_screenshot = capture
-    namespace = dict(auto=auto, time=SimpleNamespace(time=lambda: 0))
+    namespace = dict(auto=auto, time=SimpleNamespace(time=lambda: 0),
+                     ImageUtils=SimpleNamespace(get_bbox=lambda _: (0, 0, 10, 10), load_image=lambda _: None))
     exec(compile(ast.Module(body=[run], type_ignores=[]), str(path), "exec"), namespace)
     with pytest.raises(StopIteration):
         namespace["run"](SimpleNamespace(LOOP_COUNT=remaining))
@@ -154,7 +155,11 @@ def test_return_home_exhaustion_delegates_one_owned_restart(monkeypatch):
     retry = importlib.import_module("tasks.base.retry")
     operations = []
     monkeypatch.setattr(module, "auto", _BackInitMenuEventAuto([[]]))
-    monkeypatch.setattr(module, "LOOP_COUNT", 0)
+    monkeypatch.setattr(module, "retry", lambda: True)
+    monkeypatch.setattr(module, "ensure_simulator_game_started", lambda: False)
+    clock = iter((0.0, 91.0))
+    monkeypatch.setattr(module, "monotonic", lambda: next(clock))
+    monkeypatch.setattr(module, "get_task_stall_timeout", lambda: 90)
     monkeypatch.setattr(retry, "kill_game", lambda: operations.append("unowned close"))
     def restart(**kwargs):
         operations.append(kwargs)

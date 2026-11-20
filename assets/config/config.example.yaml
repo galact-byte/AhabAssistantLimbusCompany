@@ -1,4 +1,4 @@
-config_version: 1781049600 # 配置文件版本号 (时间戳)
+config_version: 1794153600 # 配置文件版本号 (时间戳)
 
 # 游戏设置
 game_title_name: LimbusCompany # 游戏窗口标题。
@@ -70,6 +70,7 @@ simulator_port: 0 # 其他模拟器的ADB端口
 mumu_instance_number: -1 # mumu模拟器的实例编号
 bluestacks_instance_name: "" # 蓝叠内部实例名，如 Pie64；留空时按端口或唯一实例自动选择
 start_emulator_timeout: 120 # 启动模拟器超时时间
+task_stall_timeout: 90 # 默认卡死重启等待秒数；低性能PC/模拟器可调大
 adb_reconnect_on_error: True # ADB或minitouch连接失效时自动重连
 
 # 自动更新
@@ -114,7 +115,9 @@ thread_day_7: 1
 
 # 是否自动获取奖励
 get_reward: False # 是否进行获取奖励
-set_get_prize: 0 # 0 领取邮件和通行证日常与周常，1 只领取通行证日常与周常， 2 只领取邮件
+claim_mission_rewards: True # 领取日常、周常及赛季任务奖励
+claim_battle_pass_rewards: True # 领取通行证奖励
+claim_mail_rewards: True # 领取邮件奖励
 
 # 是否自动购买体力
 buy_enkephalin: False # 是否自动购买体力
@@ -195,7 +198,7 @@ teams:
     second_system_action: [0, 0, 0, 0] # 第二体系行动模式
     skill_replacement: False # 自定义技能替换
     skill_replacement_select: 0 # 技能替换设置
-    skill_replacement_mode: 0 # 技能替换模式
+    skill_replacement_mode: 0 # 0=1→3，1=2→3，2=1→2，3=全换3（先2→3，再1→3），4=全换3（先1→3，再2→3）
     observe_ego_gift: False # 观测饰品
     observe_ego_gift_selected: [] # 已选观测饰品
     ignore_shop: [0, 0, 0, 0, 0] # 忽略商店楼层

@@ -169,7 +169,7 @@ class TeamSetting(BaseModel):
     """技能替换设置"""
 
     skill_replacement_mode: int = 0
-    """技能替换模式"""
+    """技能替换模式：0=1→3，1=2→3，2=1→2，3=全换3（先2→3，再1→3），4=全换3（先1→3，再2→3）"""
 
     ignore_shop: List[int] = [0] * 5
     """忽略商店楼层"""
@@ -369,6 +369,9 @@ class ConfigModel(BaseModel):
     start_emulator_timeout: int
     """启动模拟器超时时间"""
 
+    task_stall_timeout: int
+    """页面无进展后的默认重启等待时间（秒）；不覆盖流程显式指定的超时"""
+
     adb_reconnect_on_error: bool
     """ADB或minitouch连接失效时自动重连"""
 
@@ -468,8 +471,14 @@ class ConfigModel(BaseModel):
     get_reward: bool
     """是否进行获取奖励"""
 
-    set_get_prize: int
-    """奖励领取模式"""
+    claim_mission_rewards: bool
+    """领取日常、周常及赛季任务奖励"""
+
+    claim_battle_pass_rewards: bool
+    """领取通行证奖励"""
+
+    claim_mail_rewards: bool
+    """领取邮件奖励"""
 
     buy_enkephalin: bool
     """是否自动购买体力"""

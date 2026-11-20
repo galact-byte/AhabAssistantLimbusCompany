@@ -23,6 +23,7 @@ from tasks.base.retry import restart_game, retry
 from tasks.battle import battle
 from tasks.battle.battle import DefenseForSoloState
 from tasks.event import event_handling
+from tasks.mirror.get_floor import get_floor
 from tasks.mirror.in_shop import Shop
 from tasks.mirror.reward_card import get_reward_card
 from tasks.mirror.search_road import (
@@ -97,7 +98,10 @@ class Mirror:
         self.event_times = 0
 
         self.floor = 0
-        self.floor_times = [-9999.0 for i in range(5)]  # 负值代表缺失值
+        self.theme_pack_timing_start_count = 0  # 从卡包页开始计时的次数，标识完整计时的楼层数
+        self.current_floor_start_time = None  # 当前层开始计时的时刻
+        self.current_floor_time_complete = False  # 从卡包页开始计时是完整的一层计时
+        self.floor_detect_failed = False  # 本层楼层识别已失败，进入新的层前不再重试，避免持续失败带来的卡死
         self.LOOP_COUNT = 250
 
         self.mirror_map = MirrorMap(hard_mode=self.hard_mode)
@@ -111,6 +115,15 @@ class Mirror:
         start = time.time()
         result = fn(*args, **kwargs)
         return result, time.time() - start
+
+    def _log_floor_time(self, end_time, floor):
+        """输出当前楼层的耗时"""
+        if self.current_floor_start_time is None:
+            return
+        msg = f"第{floor}层" if floor > 0 else "楼层未知"
+        if not self.current_floor_time_complete:
+            msg += "，计时不完整"
+        to_log_with_time(msg, end_time - self.current_floor_start_time)
 
     def _fight(self) -> None:
         result, elapsed = self._time_call(
@@ -161,10 +174,11 @@ class Mirror:
             auto.mouse_to_blank()
             if retry() is False:
                 return False
-            if auto.find_element("home/first_prompt_assets.png", model="clam") and auto.find_element(
-                "home/back_assets.png", model="normal"
-            ):
-                auto.click_element("home/back_assets.png")
+            if auto.find_element("home/first_prompt_assets.png", model="clam",threshold=0.9):
+                if back_button := auto.click_element("home/back_assets.png", model="normal"):
+                    auto.mouse_click(back_button[0],back_button[1])
+                elif back_button := auto.click_element("home/back2_assets.png", model="normal"):
+                    auto.mouse_click(back_button[0], back_button[1])
                 continue
             if auto.find_element("mirror/claim_reward/clear_assets.png"):
                 self.bequest_from_the_previous_game = True
@@ -172,6 +186,11 @@ class Mirror:
             if inspect_mirror_shop_presence(auto).state == "shop":  # 防止卡死在商店
                 break
             if is_on_mirror_map(auto):
+                break
+            # 中途接续可能回到事件或奖励卡页，交给主循环处理。
+            if auto.find_element("event/skip_assets.png") or auto.find_element(
+                "mirror/road_in_mir/select_encounter_reward_card_assets.png"
+            ):
                 break
             if auto.click_element("mirror/road_to_mir/resume_assets.png"):
                 break
@@ -184,8 +203,8 @@ class Mirror:
                 infinity_bbox[2] + 100,
                 infinity_bbox[3],
             )  # 临时修复措施，调整裁切大小
-            if not auto.find_text_element(["off", "ff"], infinity_bbox):
-                auto.click_element("mirror/road_to_mir/infinity_mirror_enter_assets.png")
+            if not auto.find_text_element(["off", "ff","of"], infinity_bbox):
+                auto.click_element("mirror/road_to_mir/infinity_mirror_enter_assets.png",take_screenshot=True)
             if auto.click_element("mirror/road_to_mir/enter_assets.png"):
                 sleep(0.5)
                 continue
@@ -228,8 +247,8 @@ class Mirror:
                 auto.model = "aggressive"
 
     def run(self):
-        # 计时开始
-        start_time = time.time()
+        # 本次运行的开始时间
+        run_start_time = time.time()
 
         if auto.click_element("home/drive_assets.png") or auto.find_element("home/window_assets.png"):
             sleep(0.5)
@@ -237,6 +256,10 @@ class Mirror:
 
         main_loop_count = self.LOOP_COUNT
         back_menu_count = 0
+        theme_pack_active = False  # 同一卡包页选包重试时，不重复识别和重新计时。
+        preparing = False  # 新镜牢的准备过程不计入某一层的耗时。
+
+        self.observe_bbox = ImageUtils.get_bbox(ImageUtils.load_image("mirror/road_to_mir/observe_ego_gift/observe_bbox.png"))
         # 未到达奖励页不会停止
         while True:
             auto.model = "aggressive" if main_loop_count < 15 else "normal" if main_loop_count < 75 else "clam"
@@ -283,30 +306,37 @@ class Mirror:
 
             # 选择楼层主题包的情况
             if auto.find_element("mirror/theme_pack/feature_theme_pack_assets.png"):
-                sleep(2)  # 等待主题包页面加载完成再打开楼层设置
-                self.get_which_floor("mirror/theme_pack/theme_pack_setting_assets.png")
-                self._enter_hard_mode_if_needed()
-                switch_theme_pack_difficulty(self.hard_mode)
+                new_floor = not theme_pack_active or preparing
+                if new_floor:
+                    sleep(2)  # 等待主题包页面加载完成再打开楼层设置
+                    previous_floor = self.floor
+                    self.floor = get_floor(self.floor, "mirror/theme_pack/theme_pack_setting_assets.png")
+                    self.floor_detect_failed = self.floor == 0
+                    self.mirror_map.refresh_floor(self.floor, reset=True)
+                    if self.floor > 0:
+                        self._enter_hard_mode_if_needed()
+                        switch_theme_pack_difficulty(self.hard_mode)
                 if select_theme_pack(
                     self.hard_mode, self.floor, self.team_order, self.use_custom_theme_pack_weight
                 ) is False:
                     raise cannotOperateGameError("主题包选择恢复失败")
                 if self.re_formation_each_floor:
                     self.first_battle = True
-                try:
-                    if self.floor != 1:
-                        if self.floor_times[self.floor - 2] > 0:
-                            floor_time = time.time() - self.floor_times[self.floor - 2]
-                            msg = f"启动后第{self.floor}层卡包"
-                        else:
-                            floor_time = time.time() - self.floor_times[0]
-                            msg = f"启动后第{self.floor}层卡包，该楼层时间不完整"
-                        to_log_with_time(msg, floor_time)
-                    self.floor_times[self.floor - 1] = time.time()
-                except:
-                    log.info("楼层异常，可能是OCR识别错误，本轮镜牢层间的时间记录无效")
-                main_loop_count += 50
+                if new_floor:
+                    # 先输出刚结束的一层耗时，再开始新一层计时。
+                    now = time.time()
+                    self._log_floor_time(now, previous_floor)
+                    self.current_floor_start_time = now
+                    self.current_floor_time_complete = True
+                    self.theme_pack_timing_start_count += 1
+                    theme_pack_active = True
+                    preparing = False
+                    main_loop_count += 50
                 continue
+
+            # 中途启动时从脚本启动时刻计时；准备页面会清除此记录，等卡包页开始完整计时。
+            if self.current_floor_start_time is None and not preparing:
+                self.current_floor_start_time = run_start_time
 
             # 遇到选择增益事件（少见）
             if auto.click_element("mirror/road_in_mir/event_effect_button.png", threshold=0.75):
@@ -315,6 +345,7 @@ class Mirror:
 
             # 在镜牢中寻路
             if is_on_mirror_map(auto):
+                theme_pack_active = False
                 auto.mouse_to_blank()
                 while auto.take_screenshot() is None:
                     continue
@@ -329,8 +360,11 @@ class Mirror:
                 ):
                     break
                 retry()
-                if self.floor == 0:
-                    self.get_which_floor()
+                # 楼层未知且本层尚未识别失败才尝试；失败后不再重试，等进入新的层（卡包页）再识别。
+                if self.floor == 0 and not self.floor_detect_failed:
+                    self.floor = get_floor(self.floor)
+                    self.floor_detect_failed = self.floor == 0
+                    self.mirror_map.refresh_floor(self.floor)
 
                 if cfg.floor_3_exit and self.floor >= 4:
                     continue
@@ -348,12 +382,15 @@ class Mirror:
 
             # 选择镜牢队伍
             if auto.find_element("mirror/road_to_mir/select_team_stars_assets.png"):
+                preparing = True
+                self.current_floor_start_time = None
                 self.select_mirror_team()
                 continue
 
             if battle.fail_times >= 5:
                 battle.fail_times = 0
                 self.re_start()
+                preparing = True
                 continue
 
             # 战斗配队的情况
@@ -381,6 +418,7 @@ class Mirror:
                     # 如果还有至少5人能战斗就继续，不然就退出重开
                     if continue_mirror is False and self.first_battle is False:
                         self.re_start()
+                        preparing = True
                 if auto.click_element("battle/chaim_to_battle_assets.png") or auto.click_element(
                     "battle/normal_to_battle_assets.png"
                 ):
@@ -414,7 +452,9 @@ class Mirror:
                 continue
 
             # 镜牢星光
-            if auto.find_element("mirror/road_to_mir/dreaming_star/coins_assets.png", threshold=0.9):
+            if auto.find_element("mirror/road_to_mir/dreaming_star/coins_assets.png",model="normal"):
+                preparing = True
+                self.current_floor_start_time = None
                 self.enter_mir_with_star()
                 continue
 
@@ -484,11 +524,15 @@ class Mirror:
             if auto.find_element("mirror/road_to_mir/activate_gift_search_on_assets.png") or auto.find_element(
                 "mirror/road_to_mir/activate_gift_search_off_assets.png"
             ):
+                preparing = True
+                self.current_floor_start_time = None
                 self.select_init_ego_gift()
                 continue
 
-            if auto.find_element("mirror/road_to_mir/observe_ego_gift/observe_bleed_assets.png",model="clam") or auto.find_element(
-                    "mirror/road_to_mir/observe_ego_gift/observe_burn_assets.png",model="clam"):
+            if auto.find_element("mirror/road_to_mir/observe_ego_gift/bleed.png",my_crop=self.observe_bbox) or auto.find_element(
+                    "mirror/road_to_mir/observe_ego_gift/burn.png",my_crop=self.observe_bbox):
+                preparing = True
+                self.current_floor_start_time = None
                 self.select_observe_ego_gift()
                 continue
 
@@ -497,10 +541,11 @@ class Mirror:
                 auto.click_element("mirror/infinity_mirror_close_assets.png")
                 continue
 
-            if auto.find_element("home/first_prompt_assets.png", model="clam") and auto.find_element(
-                "home/back_assets.png", model="normal"
-            ):
-                auto.click_element("home/back_assets.png")
+            if auto.find_element("home/first_prompt_assets.png", model="clam", threshold=0.9):
+                if back_button := auto.click_element("home/back_assets.png", model="normal"):
+                    auto.mouse_click(back_button[0], back_button[1])
+                elif back_button := auto.click_element("home/back2_assets.png", model="normal"):
+                    auto.mouse_click(back_button[0], back_button[1])
                 continue
 
             # 防卡死
@@ -529,12 +574,11 @@ class Mirror:
 
         if self.bequest_from_the_previous_game:
             self.get_reward_in_road()
-            return True
 
         main_loop_count = 20
         auto.model = "clam"
         failed = None
-        while True:
+        while not self.bequest_from_the_previous_game:
             # 自动截图
             if auto.take_screenshot() is None:
                 auto.mouse_to_blank()
@@ -691,9 +735,9 @@ class Mirror:
             return False
         # 计时结束
         end_time = time.time()
-        elapsed_time = end_time - start_time
+        elapsed_time = end_time - run_start_time
 
-        if all(self.floor_times[i] > 0 for i in range(5)):  # 判断是否完整走了五层
+        if self.theme_pack_timing_start_count == 5:  # 五层都从卡包页开始计时，才更新完整一轮的耗时历史。
             team = cfg.config.teams.get(f"{self.team_order}")
             if team:
                 team_history = {
@@ -745,12 +789,10 @@ class Mirror:
                 log.warning(f"无法找到编队{self.team_number}的历史记录，无法更新数据")
             log.debug(team_history)
 
-        try:
-            last_floor_time = time.time() - self.floor_times[self.floor - 1]
-            msg = f"启动后第{self.floor}层卡包"
-            to_log_with_time(msg, last_floor_time)
-        except:
-            log.info("楼层异常，可能是OCR识别错误，本轮镜牢层间的时间记录无效")
+        # 从领奖页中途启动时，同样输出启动后这一段不完整的耗时。
+        if self.current_floor_start_time is None:
+            self.current_floor_start_time = run_start_time
+        self._log_floor_time(end_time, self.floor)
 
         # 输出战斗总时间
         msg = "此次镜牢在战斗"
@@ -783,7 +825,7 @@ class Mirror:
         return True
 
     def enter_mir_with_star(self):
-        coins = auto.find_element("mirror/road_to_mir/dreaming_star/coins_assets.png", threshold=0.9)
+        coins = auto.find_element("mirror/road_to_mir/dreaming_star/coins_assets.png",model="normal")
         scale = cfg.set_win_size / 1440
         first_starlight = [coins[0] - 1800 * scale, coins[1] + 300 * scale]
         starlights_X = [first_starlight[0] + (i % 5) * 400 * scale for i in range(10)]
@@ -862,6 +904,19 @@ class Mirror:
             if loop_count < 0:
                 raise cannotOperateGameError("无法进入镜牢，不能进行下一步,请手动操作重试")
 
+    def _click_init_gift_row(self, gift_id: int) -> bool:
+        """锚点兜底：以确认按钮为锚点，按实测偏移点选饰品行（随分辨率缩放）"""
+        confirm_pos = auto.find_element("mirror/road_to_mir/select_init_ego_gifts_confirm_assets.png")
+        if not confirm_pos:
+            return False
+        row_dy = {1: -490, 2: -330, 3: -170}
+        if gift_id not in row_dy:
+            return False
+        s = cfg.set_win_size / 1080
+        auto.mouse_click(confirm_pos[0] - 340 * s, confirm_pos[1] + row_dy[gift_id] * s)
+        sleep(cfg.mouse_action_interval)
+        return True
+
     def select_init_ego_gift(self):
         scroll = False
         select_system = False
@@ -871,8 +926,21 @@ class Mirror:
         team_system = self.system
         if self.opening_items:
             team_system = all_systems[self.opening_items_system]
+        start_gift_order = start_gift[self.opening_items_select] if self.opening_items else [1, 2, 3]
         log.debug("开始选择初始EGO")
         while True:
+            # 安全计数放在循环顶部，任何 continue 都跳不过它，保证有限轮内出结果
+            loop_count -= 1
+            if loop_count < 10 and auto.model != "aggressive":
+                auto.model = "aggressive"
+                log.debug("识别模式切换到激进模式")
+            elif loop_count < 20 and auto.model == "clam":
+                auto.model = "normal"
+                auto.mouse_to_blank(move_back=False)
+                log.debug("识别模式切换到正常模式")
+            if loop_count % 5 == 0:
+                log.debug(f"选择藏品识别次数剩余{loop_count}次")
+
             # 自动截图
             if auto.take_screenshot() is None:
                 continue
@@ -885,9 +953,8 @@ class Mirror:
             if not self.observe_ego_gift or len(self.observe_ego_gift_selected)==0:
                 auto.click_element("mirror/road_to_mir/activate_gift_search_on_assets.png")
             # 如果已经进入观测饰品页面,则跳过初始EGO选择
-            if auto.find_element("mirror/theme_pack/feature_theme_pack_assets.png") or auto.find_element(
-                    "mirror/road_to_mir/observe_ego_gift/observe_bleed_assets.png") or auto.find_element(
-                    "mirror/road_to_mir/observe_ego_gift/observe_burn_assets.png"):
+            if auto.find_element("mirror/theme_pack/feature_theme_pack_assets.png") or auto.find_element("mirror/road_to_mir/observe_ego_gift/bleed.png",my_crop=self.observe_bbox) or auto.find_element(
+                    "mirror/road_to_mir/observe_ego_gift/burn.png",my_crop=self.observe_bbox):
                 break
 
             if (team_system == "slash" or team_system == "pierce" or team_system == "blunt") and scroll == False:
@@ -905,21 +972,14 @@ class Mirror:
                 select_system = True
                 continue
 
-            if self.opening_items:
-                start_gift_order = start_gift[self.opening_items_select]
-                auto.click_element(
-                    f"mirror/road_to_mir/select_init_gift/{team_system}_ego_gift_{start_gift_order[0]}.png"
-                )
-                auto.click_element(
-                    f"mirror/road_to_mir/select_init_gift/{team_system}_ego_gift_{start_gift_order[1]}.png"
-                )
-                auto.click_element(
-                    f"mirror/road_to_mir/select_init_gift/{team_system}_ego_gift_{start_gift_order[2]}.png"
-                )
-            else:
-                auto.click_element(f"mirror/road_to_mir/select_init_gift/{team_system}_ego_gift_1.png")
-                auto.click_element(f"mirror/road_to_mir/select_init_gift/{team_system}_ego_gift_2.png")
-                auto.click_element(f"mirror/road_to_mir/select_init_gift/{team_system}_ego_gift_3.png")
+            # 按优先级逐个尝试点饰品，识别降级：阈值 0.8→0.7→锚点坐标
+            for gift_id in start_gift_order:
+                target = f"mirror/road_to_mir/select_init_gift/{team_system}_ego_gift_{gift_id}.png"
+                if auto.click_element(target):
+                    continue
+                if auto.click_element(target, threshold=0.7):
+                    continue
+                self._click_init_gift_row(gift_id)
 
             # 如果选择观测饰品且选择了饰品，则开启观测饰品按钮
             if self.observe_ego_gift and self.observe_ego_gift_selected:
@@ -931,16 +991,6 @@ class Mirror:
 
             if retry() is False:
                 return False
-            loop_count -= 1
-            if loop_count % 5 == 0:
-                log.debug(f"选择藏品识别次数剩余{loop_count}次")
-            if loop_count < 20:
-                auto.model = "normal"
-                auto.mouse_to_blank(move_back=False)
-                log.debug("识别模式切换到正常模式")
-            if loop_count < 10:
-                auto.model = "aggressive"
-                log.debug("识别模式切换到激进模式")
             if loop_count < 0:
                 log.error("无法进入镜牢,尝试回到初始界面")
                 back_init_menu()
@@ -971,27 +1021,41 @@ class Mirror:
                         dy=-s,
                         drag_time=1.5,
                     )
-                    sleep(1)
+                    sleep(1.5)
                 auto.mouse_click(select_gift_point[0], select_gift_point[1] - height)
 
         log.debug("开始选择观测EGO饰品")
         auto.model = "clam"
 
         my_scale = cfg.set_win_size / 1440
-        benchmark_point = None
-        if point := auto.find_element("mirror/road_to_mir/observe_ego_gift/observe_burn_assets.png", model="clam",take_screenshot=True):
-            benchmark_point = point
-        elif point := auto.find_element("mirror/road_to_mir/observe_ego_gift/observe_bleed_assets.png", model="clam"):
-            benchmark_point = (point[0] - 110 * my_scale, point[1])
+        first_point = None
+        second_point = None
+        for _ in range(3):
+            if first_point and second_point:
+                break
+            if not second_point:
+                if point := auto.find_element("mirror/road_to_mir/observe_ego_gift/bleed.png",my_crop=self.observe_bbox,take_screenshot=True):
+                    second_point = point
+                    auto.mouse_click(point[0], point[1])
+                    sleep(0.5)
+            if not first_point:
+                if point := auto.find_element("mirror/road_to_mir/observe_ego_gift/burn.png",my_crop=self.observe_bbox,take_screenshot=True):
+                    first_point = point
+                    auto.mouse_click(point[0], point[1])
+                    sleep(0.5)
 
-        if not benchmark_point:
+        if not first_point or not second_point:
             return
+
+        # 体系之间的间距
+        system_distance = second_point[0] - first_point[0]
+        print(system_distance)
 
         gift_box = ImageUtils.get_bbox(ImageUtils.load_image("mirror/road_to_mir/observe_ego_gift/gift_box_bbox.png"))
 
         # 选择观测饰品
         for gift_id in self.observe_ego_gift_selected:
-            # 从文件名推断体系，如 "bleed_3_3_7.png" -> "bleed"
+            # 从文件名推断体系，如 "bleed_3_3_7" -> "bleed"
             gm = re.match(r"^([a-z]+)_", gift_id)
             if not gm:
                 log.warning(f"无法解析饰品体系：{gift_id}，跳过")
@@ -1007,15 +1071,17 @@ class Mirror:
                 system_index = 10
             else:
                 system_index = [k for k, v in observe_system.items() if v == file_system][0]
-            # 选择体系，先点一下其他体系，再点回来，重置页面
-            auto.mouse_click(benchmark_point[0] + 110 * (system_index+1) * my_scale, benchmark_point[1])
-            sleep(0.2)
-            auto.mouse_click(benchmark_point[0] + 110 * (system_index - 1) * my_scale, benchmark_point[1])
-            sleep(0.2)
-            auto.mouse_click(benchmark_point[0] + 110 * system_index * my_scale, benchmark_point[1])
-            sleep(0.2)
 
-            if level_point := auto.find_element(f"mirror/road_to_mir/observe_ego_gift/Level_{"I"*gift_level}.png",take_screenshot=True):
+            print(system_index)
+            # 选择体系，先点一下其他体系，再点回来，重置页面
+            auto.mouse_click(first_point[0], first_point[1])
+            sleep(0.5)
+            auto.mouse_click(second_point[0], second_point[1])
+            sleep(0.5)
+            auto.mouse_click(first_point[0] + system_distance * system_index, first_point[1])
+            sleep(0.5)
+
+            if level_point := auto.find_element(f"mirror/road_to_mir/observe_ego_gift/Level_{"I"*gift_level}.png",threshold=0.85,take_screenshot=True):
                 _select_gift(level_point)
             else:
                 level_point = None
@@ -1026,7 +1092,7 @@ class Mirror:
                         dy=-(gift_box[-1]-gift_box[1])/2,
                         drag_time=1.5,
                     )
-                    if p:= auto.find_element(f"mirror/road_to_mir/observe_ego_gift/Level_{"I"*gift_level}.png",take_screenshot=True):
+                    if p:= auto.find_element(f"mirror/road_to_mir/observe_ego_gift/Level_{"I"*gift_level}.png",threshold=0.85,take_screenshot=True):
                         level_point = p
                         break
                 if level_point is None:
@@ -1204,6 +1270,11 @@ class Mirror:
         log.info(msg)
         self.first_battle = True
         self.start_time = time.time()
+        self.floor = 0
+        self.theme_pack_timing_start_count = 0
+        self.current_floor_start_time = None
+        self.current_floor_time_complete = False
+        self.floor_detect_failed = False
 
     def event_handling(self):
         # 遇到有SKIP的情况
@@ -1266,14 +1337,14 @@ class Mirror:
                     for coordinate in coordinates:
                         auto.mouse_click(coordinate[0], coordinate[1])
                     retry()
-                else:
-                    msg = "事件卡死，尝试返回主界面"
-                    log.error(msg)
-                    back_init_menu()
-                    return
 
             # 针对不同事件进行处理，优先选???与直接获取的，再选需要判定的，再选后续事件的，最后第一个事项
-            if auto.click_element("event/unknown_event.png"):
+            if unknown_pos := auto.find_element("event/unknown_event.png"):
+                if self.defense_for_solo:
+                    # 小指良单通模式：不选“？？？”选项，规避诅咒饰品
+                    event_handling.click_option_avoiding_unknown()
+                else:
+                    auto.mouse_click(unknown_pos[0], unknown_pos[1])
                 event_chance -= 1
                 continue
             if positions_list := auto.find_element(
@@ -1480,8 +1551,8 @@ class Mirror:
                         min(select_bbox[2] + 100, cfg.set_win_size * 16 / 9),  # 确保右下角 x 坐标不大于 图片宽
                         min(select_bbox[3] + 100, cfg.set_win_size),  # 确保右下角 y 坐标不大于 图片高
                     )
-                if auto.find_text_element(["0/1", "01", "1/1", "11", "1/2", "12", "/1"], my_crop=select_bbox):
-                    for gift in my_list[:1]:
+                if auto.find_text_element(["0/2", "02", "2/2", "22", "/2"], my_crop=select_bbox):
+                    for gift in my_list[:2]:
                         auto.mouse_click(gift[0], gift[1])
                         sleep(cfg.mouse_action_interval)
                     auto.click_element(
@@ -1492,8 +1563,8 @@ class Mirror:
                     if retry() is False:
                         return False
                     return
-                elif auto.find_text_element(["0/2", "02", "2/2", "22", "/2"], my_crop=select_bbox):
-                    for gift in my_list[:2]:
+                elif auto.find_text_element(["0/1", "01", "1/1", "11", "1/2", "12", "/1"], my_crop=select_bbox):
+                    for gift in my_list[:1]:
                         auto.mouse_click(gift[0], gift[1])
                         sleep(cfg.mouse_action_interval)
                     auto.click_element(
@@ -1531,25 +1602,6 @@ class Mirror:
             # 如果回到主界面，退出循环
             if auto.click_element("mirror/claim_reward/rewards_acquired_assets.png"):
                 return True
-            if cfg.no_weekly_bonuses:
-                bonuses = auto.find_element(
-                    "mirror/claim_reward/weekly_bonuses.png",
-                    find_type="image_with_multiple_targets",
-                )
-                if len(bonuses) >= 1:
-                    for _ in range(len(bonuses)):
-                        position = bonuses.pop(-1)
-                        auto.mouse_click(position[0], position[1])
-            if cfg.hard_mirror_single_bonuses:
-                bonuses = auto.find_element(
-                    "mirror/claim_reward/weekly_bonuses.png",
-                    find_type="image_with_multiple_targets",
-                )
-                bonuses = sorted(bonuses, key=lambda x: x[0])
-                if len(bonuses) > 1:
-                    for _ in range(len(bonuses) - 1):
-                        position = bonuses.pop(-1)
-                        auto.mouse_click(position[0], position[1])
             if auto.click_element(
                 "mirror/claim_reward/claim_rewards_confirm_assets.png",
                 threshold=0.75,
@@ -1569,6 +1621,27 @@ class Mirror:
                 continue
             elif auto.click_element("mirror/claim_reward/claim_rewards_assets.png"):
                 sleep(1)
+                if cfg.no_weekly_bonuses:
+                    bonuses = auto.find_element(
+                        "mirror/claim_reward/weekly_bonuses.png",
+                        find_type="image_with_multiple_targets",
+                        take_screenshot=True,
+                    )
+                    if len(bonuses) >= 1:
+                        for _ in range(len(bonuses)):
+                            position = bonuses.pop(-1)
+                            auto.mouse_click(position[0], position[1])
+                if cfg.hard_mirror_single_bonuses:
+                    bonuses = auto.find_element(
+                        "mirror/claim_reward/weekly_bonuses.png",
+                        find_type="image_with_multiple_targets",
+                        take_screenshot=True,
+                    )
+                    bonuses = sorted(bonuses, key=lambda x: x[0])
+                    if len(bonuses) > 1:
+                        for _ in range(len(bonuses) - 1):
+                            position = bonuses.pop(-1)
+                            auto.mouse_click(position[0], position[1])
                 if auto.click_element(
                     "mirror/claim_reward/use_enkephalin_assets.png",
                     take_screenshot=True,
@@ -1600,45 +1673,3 @@ class Mirror:
     def in_shop(self):
         if self.shop.in_shop(self.floor) is False:
             raise cannotOperateGameError("镜牢商店恢复失败，交由镜牢任务恢复")
-
-    def get_which_floor(self, setting_assets="mirror/road_in_mir/setting_assets.png"):
-        setting_button = auto.find_element(setting_assets, take_screenshot=True)
-        if setting_button is None:
-            log.info("未找到镜牢楼层设置按钮，跳过楼层识别")
-            return
-        auto.mouse_action_with_pos(setting_button)
-        sleep(1)  # 等待楼层设置面板展开后再识别进度
-
-        scale = cfg.set_win_size / 1440
-        if auto.find_element(
-            "mirror/road_in_mir/to_window_assets.png", threshold=0.75, take_screenshot=True
-        ):
-            # 每个 CLEAR 标记代表一层已通关，因此当前层数为标记数加一
-            clear_floors = auto.find_element(
-                "mirror/road_in_mir/clear_floor.png",
-                find_type="image_with_multiple_targets",
-                take_screenshot=True,
-                min_dist=80 * scale,
-            )
-            if clear_floors:
-                self.floor = len(clear_floors) + 1
-                log.debug(f"当前镜牢层数: {self.floor}")
-                self.mirror_map.refresh_floor(self.floor)
-            else:
-                # CLEAR 识别失败时回退到历史的未通关楼层模板。
-                not_passed_floors = auto.find_element(
-                    "mirror/road_in_mir/not_passed_floor.png",
-                    find_type="image_with_multiple_targets",
-                    take_screenshot=True,
-                    min_dist=80 * scale,
-                )
-                if not_passed_floors:
-                    self.floor = 5 - len(not_passed_floors)
-                    log.debug(f"当前镜牢层数: {self.floor}（使用未通关楼层兜底识别）")
-                    self.mirror_map.refresh_floor(self.floor)
-                else:
-                    log.info(f"未识别到当前镜牢楼层，保留当前楼层: {self.floor}")
-        else:
-            log.info("未识别到当前镜牢楼层")
-        auto.mouse_click_blank()
-        sleep(1)  # 等待设置窗口关闭

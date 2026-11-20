@@ -19,7 +19,9 @@ def test_theme_pack_failure_stops_floor_progress():
                  "switch_theme_pack_difficulty": lambda *_: None, "cannotOperateGameError": RuntimeError}
     mirror.re_formation_each_floor = False
     mirror.floor_times = [0] * 5
-    namespace.update(time=SimpleNamespace(time=lambda: 1), main_loop_count=0)
+    namespace.update(time=SimpleNamespace(time=lambda: 1), main_loop_count=0,
+                     theme_pack_active=False, preparing=False, get_floor=lambda *_: 1)
+    mirror.mirror_map = SimpleNamespace(refresh_floor=lambda *a, **kw: None)
     # 去掉循环末尾continue防止旧实现反复执行；保留完整业务分支。
     source.body[0].body = [n for n in branch.body if not isinstance(n, ast.Continue)] + [ast.Break()]
     with pytest.raises(RuntimeError):

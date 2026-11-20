@@ -12,6 +12,14 @@ from utils.path_manager import path_manager
 
 class ImageUtils:
     @staticmethod
+    def _find_image_path(image_path):
+        for path in path_manager.pic_path:
+            img_path = f"./assets/images/{path}/{image_path}"
+            if os.path.exists(img_path):
+                return img_path, path
+        return None, None
+
+    @staticmethod
     def load_image(image_path, resize=True, return_path=False):
         """
         加载图片，并根据指定区域裁剪图片。
@@ -21,14 +29,8 @@ class ImageUtils:
         :return: 图片数组；若 return_path=True，则返回 (图片数组, 路径名)。
         """
         try:
-            img_path = None
-            selected_path = None
-            for path in path_manager.pic_path:
-                img_path = os.path.join(f"./assets/images/{path}/{image_path}")
-                if os.path.exists(img_path):
-                    selected_path = path
-                    break
-            if img_path is None or not os.path.exists(img_path):
+            img_path, selected_path = ImageUtils._find_image_path(image_path)
+            if img_path is None:
                 log.error(f"未找到图片： {image_path} ")
                 return (None, None) if return_path else None
             # 使用上下文管理器打开图片文件，确保文件对象及时关闭
@@ -46,6 +48,22 @@ class ImageUtils:
         except Exception as e:
             log.error(f"加载图片时发生错误： {e}")
             return (None, None) if return_path else None
+
+    @staticmethod
+    def get_template_bbox(image_path):
+        """返回原始黑底模板中非黑像素的最小外接矩形。"""
+        img_path, _ = ImageUtils._find_image_path(image_path)
+        if img_path is None:
+            log.error(f"未找到图片： {image_path}")
+            return None
+        try:
+            with Image.open(img_path) as image:
+                if image.mode not in ("1", "L", "RGB"):
+                    return image.convert("RGB").getbbox()
+                return image.getbbox()
+        except (OSError, Image.DecompressionBombError):
+            log.error(f"无法读取图片： {image_path}")
+            return None
 
     @staticmethod
     def check_default_path_exists(image_path):
@@ -273,6 +291,52 @@ class ImageUtils:
             return center_points
         log.debug(f"未找到匹配项，最高匹配度为：{np.max(res)}")
         return []
+
+    @staticmethod
+    def match_color_regions(
+        image,
+        mask_fn,
+        roi=None,
+        min_area=300,
+        min_dist=80,
+        close_size=3,
+        close_iter=2,
+    ):
+        """颜色掩码经闭运算、连通域面积过滤与质心去重，返回 [(x, y, area)]。
+
+        roi、min_area、min_dist 以 1440 高度为基准；返回实际截图坐标。
+        无匹配返回 []，处理失败返回 None。
+        """
+        try:
+            scale = image.shape[0] / 1440
+            if roi:
+                scaled = [int(round(v * scale)) for v in roi]
+                offset = (scaled[0], scaled[1])
+                work = ImageUtils.crop(image, scaled)
+            else:
+                offset = (0, 0)
+                work = image
+            mask = np.asarray(mask_fn(work), dtype=np.uint8)
+            if mask.shape != work.shape[:2]:
+                raise ValueError(f"掩码尺寸 {mask.shape} 与 ROI {work.shape[:2]} 不一致")
+            if close_size > 0 and close_iter > 0:
+                kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (close_size, close_size))
+                mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=close_iter)
+            min_a = max(1, int(min_area * scale * scale))
+            count, _, stats, centroids = cv2.connectedComponentsWithStats(mask)
+            regions = []
+            for i in range(1, count):
+                area = stats[i, cv2.CC_STAT_AREA]
+                if area >= min_a:
+                    regions.append((centroids[i][0] + offset[0], centroids[i][1] + offset[1], area))
+            merged = []
+            for cx, cy, area in sorted(regions, key=lambda r: -r[2]):
+                if all(np.hypot(cx - mx, cy - my) > min_dist * scale for mx, my, _ in merged):
+                    merged.append((int(cx), int(cy), area))
+            return merged
+        except Exception as e:
+            log.error(f"颜色区域匹配出错：{e}")
+            return None
 
     @staticmethod
     def get_image_info(image_array):

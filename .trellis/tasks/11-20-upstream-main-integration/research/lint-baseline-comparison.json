@@ -1,0 +1,68 @@
+{
+  "app/__init__.py": {
+    "current": 1,
+    "local": 1,
+    "upstream": 1,
+    "new": []
+  },
+  "app/base_combination.py": {
+    "current": 176,
+    "local": 176,
+    "upstream": 176,
+    "new": []
+  },
+  "app/farming_interface.py": {
+    "current": 44,
+    "local": 60,
+    "upstream": 44,
+    "new": []
+  },
+  "app/my_app.py": {
+    "current": 2,
+    "local": 2,
+    "upstream": 2,
+    "new": []
+  },
+  "app/page_card.py": {
+    "current": 80,
+    "local": 79,
+    "upstream": 80,
+    "new": []
+  },
+  "app/setting_interface.py": {
+    "current": 1,
+    "local": 1,
+    "upstream": 1,
+    "new": []
+  },
+  "app/team_setting_card.py": {
+    "current": 81,
+    "local": 81,
+    "upstream": 81,
+    "new": []
+  },
+  "app/theme_pack_setting_interface.py": {
+    "current": 2,
+    "local": 2,
+    "upstream": 2,
+    "new": []
+  },
+  "module/automation/input_handlers/simulator/mumu_control.py": {
+    "current": 8,
+    "local": 8,
+    "upstream": 8,
+    "new": []
+  },
+  "module/config/config.py": {
+    "current": 1,
+    "local": 1,
+    "upstream": 1,
+    "new": []
+  },
+  "tasks/mirror/mirror.py": {
+    "current": 9,
+    "local": 9,
+    "upstream": 9,
+    "new": []
+  }
+}

@@ -6,7 +6,7 @@ import threading
 import time
 from ast import List
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Literal
 
 import cv2
 import numpy as np
@@ -396,6 +396,23 @@ class Automation(metaclass=SingletonMeta):
                 restart_game(close_first=True)
             return None
 
+    def get_template_position(
+        self, target: str, output: Literal["center", "bbox"] = "center"
+    ) -> tuple[int, int] | tuple[int, int, int, int] | None:
+        """按配置分辨率返回黑底模板的中心或最小外接矩形。"""
+        if output not in ("center", "bbox"):
+            raise ValueError(f"不支持的模板位置输出类型: {output}")
+        bbox = ImageUtils.get_template_bbox(target)
+        if bbox is None:
+            return None
+        scale = cfg.set_win_size / 1440
+        left, top, right, bottom = bbox
+        left, top = math.floor(left * scale), math.floor(top * scale)
+        right, bottom = math.ceil(right * scale), math.ceil(bottom * scale)
+        if output == "bbox":
+            return left, top, right, bottom
+        return (left + right) // 2, (top + bottom) // 2
+
     def find_element(
         self,
         target,
@@ -498,6 +515,28 @@ class Automation(metaclass=SingletonMeta):
         except Exception as e:
             log.error(f"寻找图片出错:{e}")
             return []
+
+    def find_regions_by_color(self, roi, mask_fn, min_area=300, min_dist=80) -> list | None:
+        """
+        Args:
+            roi: (x1, y1, x2, y2) 1440 高度基准坐标，内部按实际截图高度自动缩放
+            mask_fn: callable(ROI的RGB ndarray) -> uint8 掩码(0/255)
+            min_area/min_dist: 透传 ImageUtils.match_color_regions
+
+        Returns:
+            list[(cx, cy, area)]: 颜色区域质心与面积；无匹配返回 []，匹配出错返回 None
+        """
+        while self.take_screenshot(gray=False) is None:
+            continue
+        color_image = np.array(self.screenshot)
+        if self.screenshot.mode != "L":
+            self.screenshot = self.screenshot.convert("L")
+        regions = ImageUtils.match_color_regions(
+            color_image, mask_fn, roi=roi, min_area=min_area, min_dist=min_dist
+        )
+        if regions is not None:
+            log.debug(f"颜色匹配到{len(regions)}个区域：{regions}", stacklevel=3)
+        return regions
 
     def find_str_in_text(self, target, ocr_dict):
         """

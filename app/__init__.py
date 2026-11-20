@@ -47,11 +47,6 @@ set_lunacy_to_enkephalin_options = {
     QT_TRANSLATE_NOOP("BaseComboBox", "换第二次"): 2,
     QT_TRANSLATE_NOOP("BaseComboBox", "换第三次"): 3,
 }
-set_get_prize_options = {
-    QT_TRANSLATE_NOOP("BaseComboBox", "邮件+日/周常"): 0,
-    QT_TRANSLATE_NOOP("BaseComboBox", "日/周常"): 1,
-    QT_TRANSLATE_NOOP("BaseComboBox", "邮件"): 2,
-}
 set_after_completion_options = {
     QT_TRANSLATE_NOOP("BaseComboBox", "无"): 0,
     QT_TRANSLATE_NOOP("BaseComboBox", "睡眠"): 1,
@@ -117,7 +112,13 @@ skill_replacement_sinner = {
     QT_TRANSLATE_NOOP("BaseComboBox", "配队前7"): 2,
     QT_TRANSLATE_NOOP("BaseComboBox", "所有选中的人"): 3,
 }
-skill_replacement_mode = {"1→3": 0, "2→3": 1, "1→2": 2}
+skill_replacement_mode = {
+    "1→3": 0,
+    "2→3": 1,
+    "1→2": 2,
+    QT_TRANSLATE_NOOP("BaseComboBox", "全换3（先2→3，再1→3）"): 3,
+    QT_TRANSLATE_NOOP("BaseComboBox", "全换3（先1→3，再2→3）"): 4,
+}
 
 refresh_count_options = {
     "0": 0,

@@ -17,6 +17,8 @@ _restart_lock = Lock()
 
 _last_title_screen_tap_time = 0.0
 _last_simulator_alive_check_time = 0.0
+DEFAULT_TASK_STALL_TIMEOUT = 90
+MIN_TASK_STALL_TIMEOUT = 30
 _last_server_error_retry_time = 0.0
 _server_error_disabled_since: float | None = None
 
@@ -217,11 +219,26 @@ def kill_game():
     game_process.close_game()
 
 
-def check_times(start_time, timeout=90, logs=True):
+def get_task_stall_timeout() -> int:
+    """读取页面卡死等待时间，并为异常配置提供安全下限。"""
+    try:
+        configured_timeout = int(cfg.get_value("task_stall_timeout", DEFAULT_TASK_STALL_TIMEOUT))
+    except (TypeError, ValueError, OverflowError):
+        return DEFAULT_TASK_STALL_TIMEOUT
+    return max(MIN_TASK_STALL_TIMEOUT, configured_timeout)
+
+
+def check_times(start_time, timeout=None, logs=True):
     """检查是否卡死超时，若是则尝试关闭重启游戏"""
+    if timeout is None:
+        timeout = get_task_stall_timeout()
     now_time = time.time()
     if logs and int(now_time - start_time) > 9 and int(now_time - start_time) % 10 == 0:
-        log.info(f"初始时间为{time.strftime('%H:%M:%S', time.localtime(start_time))}，此刻时间为{time.strftime('%H:%M:%S', time.localtime(now_time))}，已卡死{int(now_time - start_time)}秒")
+        log.info(
+            f"初始时间为{time.strftime('%H:%M:%S', time.localtime(start_time))}，"
+            f"此刻时间为{time.strftime('%H:%M:%S', time.localtime(now_time))}，"
+            f"已卡死{int(now_time - start_time)}秒"
+        )
         sleep(1)
     if now_time - start_time > timeout:
         log.info(f"已卡死超过{timeout}秒，尝试关闭重启游戏")

@@ -1,0 +1,12 @@
+F..........                                                                                                    [100%]
+===================================================== FAILURES ======================================================
+_______________________________ test_queue_is_notified_only_after_worker_has_finished _______________________________
+tests\test_upstream_integration.py:33: in test_queue_is_notified_only_after_worker_has_finished
+    assert calls == ["refresh_teams_order", "mirror_bar_kill_signal", "script_finished"]
+E   AssertionError: assert ['refresh_tea..._kill_signal'] == ['refresh_tea...ipt_finished']
+E     
+E     Right contains one more item: 'script_finished'
+E     Use -v to get more diff
+============================================== short test summary info ==============================================
+FAILED tests/test_upstream_integration.py::test_queue_is_notified_only_after_worker_has_finished - AssertionError: ...
+1 failed, 10 passed in 2.34s

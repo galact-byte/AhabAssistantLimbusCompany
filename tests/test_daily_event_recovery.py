@@ -871,7 +871,7 @@ def test_back_init_menu_keeps_waiting_for_event_result_past_loop_budget(monkeypa
         ],
         home_after_event=True,
     )
-    clock = iter([0.0, 0.0, *[float(second) for second in range(1, 41)]])
+    clock = iter([0.0, 0.0, *[float(second) for second in range(1, 41)], 41.0])
     _configure_back_init_menu_event_dependencies(monkeypatch, back_init_menu_module, fake_auto)
     monkeypatch.setattr(back_init_menu_module, "monotonic", lambda: next(clock))
 
@@ -908,7 +908,7 @@ def test_back_init_menu_resets_event_wait_clock_after_non_event_frame(monkeypatc
         home_after_event=True,
         home_at_ocr_call=5,
     )
-    clock = iter((0.0, 0.0, 61.0, 61.0, 62.0))
+    clock = iter((0.0, 0.0, 61.0, 61.0, 62.0, 62.0, 63.0))
     _configure_back_init_menu_event_dependencies(monkeypatch, back_init_menu_module, fake_auto)
     monkeypatch.setattr(back_init_menu_module, "monotonic", lambda: next(clock))
 

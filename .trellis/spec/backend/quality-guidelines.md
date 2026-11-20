@@ -129,6 +129,13 @@ Keep a named local retry limit (`EVENT_CHOICE_MAX_RETRY_ATTEMPTS`) for a stable 
 ### 7. 错误与正确
 错误：只清 `img_cache`，保留 `_unavailable_feature_templates`；正确：`clear_img_cache()` 一并清除两个缓存，由资源同步完成路径调用。
 
+## 上游融合时的任务完成与恢复兼容
+
+- `my_script_task.finished` 仍是线程真实结束的依据；`FarmingInterface._on_script_finished()` 清理线程、恢复开始按钮与 `_script_stopping` 后，才发送 `mediator.script_finished`，供上游排队任务继续执行。不能从工作线程直接提前通知或用强杀代替协作停止。
+- `get_task_stall_timeout()` 统一读取配置：非法值回退默认90秒、下限30秒；普通重试/返回主页共用该来源。事件结果等待仍有独立单调时钟期限，等待期间不能被配置较短的普通超时提前重启。
+- `Game.start_game()` 在 Windows 检查现有游戏进程；仅有进程而无窗口时也不能立即重复发起启动。关闭路径保留普通关闭、有限等待和单次超时回退。
+- 融合回归：`tests/test_upstream_integration.py` 覆盖完成通知、无窗口进程和超时兼容；`tests/native_stop_probe.py` 补充真实 Qt/ONNX 合成输入停止验证，不能替代游戏实机验收。
+
 ## Forbidden patterns
 
 - **Do not** reset a total task timeout just because a UI animation is being waited on; reset only the local recognition budget when the state is known.

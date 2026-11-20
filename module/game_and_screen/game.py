@@ -1,7 +1,7 @@
 import os
 import subprocess
 import webbrowser
-from time import monotonic, sleep
+from time import monotonic, sleep, time
 
 import psutil
 import win32con
@@ -34,14 +34,20 @@ class Game(metaclass=SingletonMeta):
         return normalized
 
     def check_game_alive(self):
+        """保留精确进程匹配，清理启动宽限期后仍无游戏窗口的残留进程。"""
         target = self._normalize_process_name(self.process_name)
         for proc in psutil.process_iter(["name"]):
             try:
-                # 获取进程的可执行文件名（如 "notepad.exe"）
                 proc_name = proc.info["name"]
-                if proc_name and target == self._normalize_process_name(proc_name):
+                if not proc_name or target != self._normalize_process_name(proc_name):
+                    continue
+                if win32gui.FindWindow("UnityWndClass", cfg.game_title_name):
                     self.log.debug(f"游戏已启动：{self.process_name}，进程ID：{proc.pid}")
                     return True
+                if time() - proc.create_time() < 180:
+                    return True
+                self.log.warning(f"发现无窗口的僵尸游戏进程 {proc.pid}，正在清理")
+                psutil.Process(proc.pid).kill()
             except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
                 # 忽略已终止、无权限或僵尸进程
                 continue

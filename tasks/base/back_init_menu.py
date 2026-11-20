@@ -5,40 +5,35 @@ from module.decorator.decorator import begin_and_finish_time_log
 from module.logger import log
 from module.task_control import sleep
 from tasks.base import update_model_for_retry
-from tasks.base.retry import click_title_screen_safely, ensure_simulator_game_started, retry
+from tasks.base.retry import click_title_screen_safely, ensure_simulator_game_started, get_task_stall_timeout, retry
 from tasks.event.event_handling import resolve_event_page
 from tasks.event_page import EVENT_RESULT_TIMEOUT
 from tasks.mirror.reward_card import get_reward_card
 from tasks.mirror.shop_presence import is_on_mirror_map
 
 LOOP_COUNT = 30
-LOADING_TIMEOUT = 90
 EVENT_PAGE_WAIT_TIMEOUT = EVENT_RESULT_TIMEOUT
 
 @begin_and_finish_time_log(task_name="返回主界面")
 def back_init_menu(*, allow_restart: bool = True):
     loop_count = LOOP_COUNT
-    loading_started_at = None
     event_wait_started_at: float | None = None
+    recovery_started_at = None
+    recovery_timeout = get_task_stall_timeout()
     auto.model = "clam"
     while True:
-        loop_count -= 1
+        # 次数只用于升级识别模式，重启由实际等待时间决定。
+        loop_count = max(0, loop_count - 1)
         update_model_for_retry(loop_count, normal_at=20, aggressive_at=10)
-        if loop_count < 0:
-            if not allow_restart:
-                log.warning("无法返回主界面，本次调用禁用内部重启，返回失败")
-                return False
-            from tasks.base.retry import restart_game
-
-            log.error("无法返回主界面，尝试重启游戏")
-            return restart_game(close_first=True)
         if ensure_simulator_game_started():
+            recovery_started_at = None
             continue
         if retry() is False:
             return False
 
         resolution = resolve_event_page(auto.get_ocr_entries())
         if resolution is not None:
+            recovery_started_at = None
             if resolution.state == "advance" and resolution.position is None:
                 log.warning("OCR事件页推进结果缺少坐标，按等待状态处理")
             if event_wait_started_at is None:
@@ -57,10 +52,23 @@ def back_init_menu(*, allow_restart: bool = True):
             if not allow_restart:
                 log.warning("事件结果页等待推进按钮超时，返回主页失败")
                 return False
+            from tasks.base.retry import restart_game
+
             log.warning("事件结果页等待推进按钮超时，尝试重启游戏")
-            loop_count = 0
-            continue
+            return restart_game(close_first=True)
         event_wait_started_at = None
+
+        now = monotonic()
+        if recovery_started_at is None:
+            recovery_started_at = now
+        if now - recovery_started_at >= recovery_timeout:
+            if not allow_restart:
+                log.warning("无法返回主界面，本次调用禁用内部重启，返回失败")
+                return False
+            from tasks.base.retry import restart_game
+
+            log.error(f"返回主界面等待超过{recovery_timeout}秒，尝试重启游戏")
+            return restart_game(close_first=True)
 
         if auto.click_element("home/window_assets.png") and auto.find_element("home/mail_assets.png", model="normal"):
             return True
@@ -111,14 +119,10 @@ def back_init_menu(*, allow_restart: bool = True):
 
         # 等待加载情况
         if auto.find_element("base/waiting_assets.png") or auto.find_element("base/waiting_2_assets.png"):
-            if loading_started_at is None:
-                loading_started_at = monotonic()
-            loop_count = LOOP_COUNT if monotonic() - loading_started_at < LOADING_TIMEOUT else 0
             continue
-        loading_started_at = None
 
         # 左上角有后退键
-        if auto.click_element("home/back_assets.png"):
+        if auto.click_element("home/back_assets.png") or auto.click_element("home/back2_assets.png"):
             continue
 
         # 在战斗中

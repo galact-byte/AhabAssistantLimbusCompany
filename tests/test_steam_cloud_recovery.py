@@ -177,6 +177,7 @@ def _new_game(game_path: str = r"Z:\missing\LimbusCompany.exe") -> Game:
 
 def test_check_game_alive_matches_only_the_full_process_name_case_insensitively(monkeypatch) -> None:
     game = _new_game()
+    monkeypatch.setattr(game_module.win32gui, "FindWindow", lambda *_: 123)
     matching_process = SimpleNamespace(info={"name": "limbuscompany.EXE"}, pid=99)
     similar_process = SimpleNamespace(info={"name": "LimbusCompany.exe.helper"}, pid=100)
     monkeypatch.setattr(game_module.psutil, "process_iter", lambda _: [matching_process, similar_process])
@@ -190,6 +191,7 @@ def test_check_game_alive_matches_only_the_full_process_name_case_insensitively(
 def test_check_game_alive_matches_config_without_exe_extension(monkeypatch) -> None:
     game = _new_game()
     game.process_name = "LimbusCompany"
+    monkeypatch.setattr(game_module.win32gui, "FindWindow", lambda *_: 123)
     running = SimpleNamespace(info={"name": "LimbusCompany.exe"}, pid=101)
     monkeypatch.setattr(game_module.psutil, "process_iter", lambda _: [running])
 

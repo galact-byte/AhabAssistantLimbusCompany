@@ -108,6 +108,7 @@ def test_finished_slot_only_unlocks_and_exits_after_native_thread_finished():
             "mediator": SimpleNamespace(
                 refresh_teams_order=SimpleNamespace(emit=lambda: None),
                 mirror_bar_kill_signal=SimpleNamespace(emit=lambda: None),
+                script_finished=SimpleNamespace(emit=lambda: None),
             ),
         },
     )
